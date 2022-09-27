@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application
         android:name=".App"
@@ -16,26 +17,35 @@
         android:theme="@style/Theme.Lavka"
         tools:targetApi="31">
 
-        <service
-            android:name=".Inventory.DownloadDataJobService"
-            android:enabled="true"
-            android:exported="true"
-            android:permission="android.permission.BIND_JOB_SERVICE"/>
-
-        <service
-            android:name=".Inventory.DownloadService"
-            android:exported="false" />
-
         <activity
-            android:name=".InventoryActivity"
+            android:name=".ReceiptActivity"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
 
+        <service
+            android:name=".Inventory.DownloadDataJobService"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <service
+            android:name=".Inventory.DownloadService"
+            android:exported="false" />
+
+        <service android:name=".DataSyncService">
+        </service>
+
+        <activity
+            android:name=".InventoryActivity"
+            android:exported="true">
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />
@@ -43,8 +53,6 @@
         <activity
             android:name=".MainActivity"
             android:exported="true">
-
-
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />

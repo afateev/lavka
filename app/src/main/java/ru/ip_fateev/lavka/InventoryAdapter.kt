@@ -8,7 +8,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import ru.ip_fateev.lavka.Inventory.Product
 
-class InventoryAdapter internal constructor(context: Context?) :
+class InventoryAdapter internal constructor(context: Context?, private val onItemClicked: (position: Int) -> Unit) :
     RecyclerView.Adapter<InventoryAdapter.ViewHolder>() {
     private val inflater: LayoutInflater
     private var productList: MutableList<Product> = ArrayList<Product>()
@@ -19,7 +19,7 @@ class InventoryAdapter internal constructor(context: Context?) :
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = inflater.inflate(R.layout.list_item_inventory, parent, false)
-        return ViewHolder(view)
+        return ViewHolder(view, onItemClicked)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -39,7 +39,7 @@ class InventoryAdapter internal constructor(context: Context?) :
         notifyDataSetChanged()
     }
 
-    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    inner class ViewHolder(itemView: View, private val onItemClicked: (position: Int) -> Unit) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
         val id: TextView
         val name: TextView
         val price: TextView
@@ -48,6 +48,12 @@ class InventoryAdapter internal constructor(context: Context?) :
             id = itemView.findViewById(R.id.id)
             name = itemView.findViewById(R.id.name)
             price = itemView.findViewById(R.id.price)
+            itemView.setOnClickListener(this)
+        }
+
+        override fun onClick(v: View) {
+            val position = adapterPosition
+            onItemClicked(position)
         }
     }
 }

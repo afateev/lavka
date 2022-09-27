@@ -18,6 +18,7 @@ class App : Application() {
         super.onCreate()
         instance = this
         inventory = LocalData(applicationContext, "data_test1")
+        DataSyncService.startService(this, "DataSync Service running...")
     }
 
     fun getInventory(): LocalData? {
