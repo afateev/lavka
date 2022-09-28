@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import ru.ip_fateev.lavka.Inventory.DownloadDataJobService
 import ru.ip_fateev.lavka.Inventory.Product
 
 class ReceiptActivity : AppCompatActivity() {
@@ -16,8 +15,6 @@ class ReceiptActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_receipt)
-
-        //DownloadDataJobService.scheduleDownloadDataJob(applicationContext)
 
         fabAdd = findViewById(R.id.fabAdd)
 
