@@ -2,7 +2,6 @@ package ru.ip_fateev.lavka
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.LiveData
 import androidx.recyclerview.widget.RecyclerView
@@ -15,7 +14,7 @@ class InventoryActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_inventory)
 
-        val recyclerView = findViewById<RecyclerView>(R.id.list)
+        val recyclerView = findViewById<RecyclerView>(R.id.inventory_list)
         val adapter = InventoryAdapter(this){ position -> onListItemClick(position) }
         recyclerView.adapter = adapter
 
