@@ -58,6 +58,7 @@
                 android:layout_height="wrap_content"
                 android:layout_column="2"
                 android:layout_weight="0.33"
+                android:onClick="onPosClick"
                 android:text="Касса"
                 app:icon="@drawable/main_pos"
                 app:iconGravity="top" />

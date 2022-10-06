@@ -1,9 +1,9 @@
 package ru.ip_fateev.lavka
 
-import android.content.ComponentName
-import android.content.Intent
-import android.content.ServiceConnection
+import android.app.PendingIntent
+import android.content.*
 import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbManager
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
@@ -16,6 +16,8 @@ import java.math.BigDecimal
 
 class MainActivity : AppCompatActivity() {
     private var TAG = "Lavka"
+    private val ACTION_USB_PERMISSION = "ru.evotor.devices.drivers.USB_PERMISSION"
+    private val usbDevices: MutableList<UsbDevice> = arrayListOf()
 
     var evotorDriverManager: IUsbDriverManagerService? = null
     var terminalId = -1
@@ -24,7 +26,6 @@ class MainActivity : AppCompatActivity() {
         // Called when the connection with the service is established
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             evotorDriverManager = IUsbDriverManagerService.Stub.asInterface(service)
-            terminalId = evotorDriverManager?.addUsbDevice(null, "")!!
             Log.e(TAG, "Evotor DriverManagerService  connected")
         }
 
@@ -42,6 +43,43 @@ class MainActivity : AppCompatActivity() {
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             evotorPaySystemService = IPaySystemDriverService.Stub.asInterface(service)
             Log.e(TAG, "Evotor PaySystemService  connected")
+
+            val m = applicationContext.getSystemService(USB_SERVICE) as UsbManager
+            val usbDevices = m.deviceList
+            val ite: Collection<UsbDevice> = usbDevices.values
+            val usbs: List<UsbDevice> = ite.toList<UsbDevice>()
+            for (usb in usbs) {
+                Log.d("Connected usb devices", "Connected usb devices are " + usb.deviceName)
+
+                evotorRegisterDevice(usb)
+            }
+        }
+
+        // Called when the connection with the service disconnects unexpectedly
+        override fun onServiceDisconnected(className: ComponentName) {
+            Log.e(TAG, "Evotor PaySystemService  disconnected")
+            evotorPaySystemService = null
+        }
+    }
+
+    private fun evotorRegisterDevice(device: UsbDevice) {
+        /*
+        // это работает, из сервиса сбера не хватает прав
+        val m = applicationContext.getSystemService(USB_SERVICE) as UsbManager
+
+        device.getInterface(0).also { intf ->
+            intf.getEndpoint(0)?.also { endpoint ->
+                m.openDevice(device)?.apply {
+                    Log.e(TAG, this.toString())
+                }
+            }
+        }*/
+
+        if (evotorDriverManager != null) {
+            terminalId = evotorDriverManager?.addUsbDevice(device, device.deviceName)!!
+        }
+
+        if (evotorPaySystemService != null) {
             if (terminalId >= 0) {
                 evotorPaySystemService?.openServiceMenu(terminalId)
                 evotorPaySystemService?.getBankName(terminalId)?.let { Log.e(TAG, it) }
@@ -49,17 +87,31 @@ class MainActivity : AppCompatActivity() {
                 evotorPaySystemService?.getMerchNumber(terminalId)?.let { Log.e(TAG, it) }
                 evotorPaySystemService?.getMerchEngName(terminalId)?.let { Log.e(TAG, it) }
                 evotorPaySystemService?.getServerIP(terminalId)?.let { Log.e(TAG, it) }
-                //val payInfo = PayInfo(BigDecimal(1))
-                //var payResult = evotorPaySystemService?.payment(terminalId, payInfo)
-                //Log.e(TAG, payResult.toString())
+                val payInfo = PayInfo(BigDecimal(1))
+                var payResult = evotorPaySystemService?.payment(terminalId, payInfo)
+                Log.e(TAG, payResult.toString())
             }
-
         }
+    }
 
-        // Called when the connection with the service disconnects unexpectedly
-        override fun onServiceDisconnected(className: ComponentName) {
-            Log.e(TAG, "Evotor PaySystemService  disconnected")
-            evotorPaySystemService = null
+    private val usbReceiver = object : BroadcastReceiver() {
+
+        override fun onReceive(context: Context, intent: Intent) {
+            if (ACTION_USB_PERMISSION == intent.action) {
+                synchronized(this) {
+                    val device: UsbDevice? = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
+
+                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                        device?.apply {
+                            //call method to set up device communication
+                            usbDevices.add(device)
+                            evotorRegisterDevice(device)
+                        }
+                    } else {
+                        Log.d(TAG, "permission denied for device $device")
+                    }
+                }
+            }
         }
     }
 
