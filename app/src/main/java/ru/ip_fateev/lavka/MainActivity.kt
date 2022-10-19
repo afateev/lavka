@@ -1,17 +1,20 @@
 package ru.ip_fateev.lavka
 
-import android.app.PendingIntent
 import android.content.*
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Bundle
 import android.os.IBinder
+import android.util.ArrayMap
 import android.util.Log
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import ru.evotor.devices.drivers.IPaySystemDriverService
 import ru.evotor.devices.drivers.IUsbDriverManagerService
 import ru.evotor.devices.drivers.paysystem.PayInfo
+import ru.sberbank.uposcore.*
 import java.math.BigDecimal
+import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
@@ -78,20 +81,17 @@ class MainActivity : AppCompatActivity() {
         if (evotorDriverManager != null) {
             terminalId = evotorDriverManager?.addUsbDevice(device, device.deviceName)!!
         }
+        /*
+        // через сервис сбера
 
         if (evotorPaySystemService != null) {
             if (terminalId >= 0) {
-                evotorPaySystemService?.openServiceMenu(terminalId)
-                evotorPaySystemService?.getBankName(terminalId)?.let { Log.e(TAG, it) }
-                evotorPaySystemService?.getTerminalID(terminalId)?.let { Log.e(TAG, it) }
-                evotorPaySystemService?.getMerchNumber(terminalId)?.let { Log.e(TAG, it) }
-                evotorPaySystemService?.getMerchEngName(terminalId)?.let { Log.e(TAG, it) }
-                evotorPaySystemService?.getServerIP(terminalId)?.let { Log.e(TAG, it) }
+                //evotorPaySystemService?.openServiceMenu(terminalId)
                 val payInfo = PayInfo(BigDecimal(1))
                 var payResult = evotorPaySystemService?.payment(terminalId, payInfo)
                 Log.e(TAG, payResult.toString())
             }
-        }
+        }*/
     }
 
     private val usbReceiver = object : BroadcastReceiver() {
@@ -115,12 +115,88 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    class Listener: JNIListener {
+        override fun onCreateScreen(i: Int, str: String?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onDeleteKey(i: Int) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onDriverRequest(bArr: ByteArray?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onGetHwStatus(i: Int): String {
+            TODO("Not yet implemented")
+        }
+
+        override fun onLoadKey(i: Int, z: Boolean, i2: Int, bArr: ByteArray?): Boolean {
+            TODO("Not yet implemented")
+        }
+
+        override fun onMasterCallData(bArr: ByteArray?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onRelayCallData(bArr: ByteArray?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onRunResult(i: Int, map: MutableMap<Int, String>?) {
+            if (map != null) {
+                ShowResult(map)
+            }
+            //TODO("Not yet implemented")
+        }
+
+        override fun onSecureCertificateRequest(): ByteArray {
+            TODO("Not yet implemented")
+        }
+
+        override fun onUpdateScreen(i: Int, str: String?) {
+            TODO("Not yet implemented")
+        }
+
+        private fun ShowResult(map: Map<Int, String>) {
+            val length = Results.values().size
+            for (i in 0 until length) {
+                try {
+                    Log.i("TAG", Results.fromInt(i).toString() + ":" + map[Integer.valueOf(i)])
+                } catch (th: Throwable) {
+                    Log.i("TAG", th.toString())
+                }
+            }
+        }
+
+    }
+
+    var listener = Listener()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         InitEvotorDriverManager()
         InitEvotorPaySystemService()
+
+        //инициализация upos native
+        val arrayMap: ArrayMap<Settings, String> = ArrayMap<Settings, String>()
+        val absolutePath: String = applicationContext.getFilesDir().getAbsolutePath()
+        arrayMap.put(Settings.CURRENT_DIR, absolutePath)
+        arrayMap.put(Settings.EXTERN_DIR, absolutePath)
+        arrayMap.put(Settings.CASH_REGISTER_NAME, "ru.sberbank.upos_driver_test")
+
+        val rn = ""
+        val sn = ""
+        var fiscalActvationDate = ""
+        arrayMap.put(Settings.CASH_REGISTER_SERIAL, rn);
+        arrayMap.put(Settings.FISKAL_SERIAL, sn);
+        arrayMap.put(Settings.FISKAL_ACTIVATION_DATE, fiscalActvationDate);
+
+        var upos = NativeInterface.uposInit(arrayMap, applicationContext.assets, listener)
+        Log.d(TAG, upos.toString())
     }
 
     override fun onDestroy() {
@@ -168,4 +244,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    fun onPosClick(view: View) {
+        // мимо сервиса
+        val aMap: ArrayMap<Params, String> = ArrayMap<Params, String>()
+        val valueOf: Int = Integer.valueOf(Random().nextInt(200000000) + 1)
+        aMap.put(Params.OPERATION, "1");
+        aMap.put(Params.AMOUNT, "100");
+        aMap[Params.REQUEST_ID] = valueOf.toString()
+        aMap[Params.JNI_PROCESS_CALL_ID] = valueOf.toString()
+
+        val uposRun = NativeInterface.uposRun(aMap, listener)
+        Log.d(TAG, uposRun.toString())
+    }
 }
+

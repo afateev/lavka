@@ -30,6 +30,22 @@
         <service android:name=".DataSyncService">
         </service>
 
+        <service
+            android:label="UPOS Driver"
+            android:name="ru.sberbank.uposnative.evotor_driver.EvotorUsbService"
+            android:enabled="true"
+            android:exported="true">
+
+            <intent-filter>
+
+                <action
+                    android:name="ru.evotor.devices.drivers.DriverManager" />
+
+                <action
+                    android:name="ru.evotor.devices.drivers.PaySystemService" />
+            </intent-filter>
+        </service>
+
         <activity
             android:name=".InventoryActivity"
             android:exported="true">
@@ -37,6 +53,7 @@
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
