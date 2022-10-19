@@ -1,6 +1,7 @@
 package ru.ip_fateev.lavka
 
 import android.app.Application
+import ru.ip_fateev.lavka.DataSyncService.Companion.startService
 import ru.ip_fateev.lavka.Inventory.LocalData
 //import ru.sberbank.uposnative.bridge.BridgeListener
 //import ru.sberbank.uposnative.bridge.impl.BridgeListenerImpl
@@ -43,6 +44,7 @@ class App : Application() {
         instance = this
         inventory = LocalData(applicationContext, "data_test1")
         //DataSyncService.startService(this, "DataSync Service running...")
+        UposService.startService(this, "UPOS Service running...")
         //initFabric(this);
     }
 
