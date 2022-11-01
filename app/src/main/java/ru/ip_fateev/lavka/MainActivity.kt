@@ -245,6 +245,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun onSellClick(view: View) {
+        var intent = Intent(this, ReceiptActivity::class.java)
+        intent.action = "ru.ip_fateev.lavka.ACTION_NEW_RECEIPT"
+        intent.putExtra(ReceiptActivity.EXTRA_RECEIPT_TYPE, ReceiptActivity.RECEIPT_TYPE_SELL)
+        startActivity(intent)
+    }
+
     fun onPosClick(view: View) {
         // мимо сервиса
         val aMap: ArrayMap<Params, String> = ArrayMap<Params, String>()

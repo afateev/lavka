@@ -48,7 +48,12 @@ class UposService : Service() {
             .setContentIntent(pendingIntent)
 
         val notification = notificationBuilder.build()
-        startForeground(1, notification)
+        startForeground(2, notification)
+
+        val notificationManager = ContextCompat.getSystemService(this@UposService,
+            NotificationManager::class.java)  as NotificationManager
+        notificationBuilder.setContentText("Терминал не подключен")
+        notificationManager.notify(2, notificationBuilder.build())
 
         //stopSelf();
         //stopForeground(true)
