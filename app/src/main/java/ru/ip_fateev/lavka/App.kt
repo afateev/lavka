@@ -3,6 +3,8 @@ package ru.ip_fateev.lavka
 import android.app.Application
 import ru.ip_fateev.lavka.DataSyncService.Companion.startService
 import ru.ip_fateev.lavka.Inventory.LocalData
+import ru.ip_fateev.lavka.documents.LocalDatabase
+
 //import ru.sberbank.uposnative.bridge.BridgeListener
 //import ru.sberbank.uposnative.bridge.impl.BridgeListenerImpl
 
@@ -20,6 +22,8 @@ class App : Application() {
     }
 
     private var inventory: LocalData? = null
+    lateinit var database: LocalDatabase
+    lateinit var localRepository: LocalRepository
     //private val bridgeListener: BridgeListener = BridgeListenerImpl(this)
 
     /*fun getBridgeListener(): BridgeListener {
@@ -43,6 +47,8 @@ class App : Application() {
         super.onCreate()
         instance = this
         inventory = LocalData(applicationContext, "data_test1")
+        database = LocalDatabase.instance(this)
+        localRepository = LocalRepository(database.receiptDao(), database.positionDao())
         //DataSyncService.startService(this, "DataSync Service running...")
         UposService.startService(this, "UPOS Service running...")
         //initFabric(this);
@@ -54,5 +60,9 @@ class App : Application() {
 
     fun getInventory(): LocalData? {
         return inventory
+    }
+
+    fun getRepository(): LocalRepository {
+        return localRepository
     }
 }
