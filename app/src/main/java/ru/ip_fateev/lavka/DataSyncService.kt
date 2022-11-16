@@ -15,11 +15,17 @@ import org.json.JSONException
 import org.json.JSONObject
 import ru.ip_fateev.lavka.App.Companion.getInstance
 import ru.ip_fateev.lavka.Inventory.Product
+import ru.ip_fateev.lavka.cloud.Api
+import ru.ip_fateev.lavka.cloud.common.Common
+import ru.ip_fateev.lavka.cloud.model.ProductList
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 internal class ApiProductListGetResult(root: JSONObject) {
     var valid = false
@@ -77,6 +83,8 @@ class DataSyncService : Service() {
     private val API_URL = "https://ip-fateev.ru/api"
     private val API_URL_PRODUCT_LIST = "$API_URL/product/list"
     private val API_URL_PRODUCT_GET = "$API_URL/product/"
+
+    lateinit var cloudApi: Api
     var syncRunning = false
 
     companion object {
@@ -93,6 +101,8 @@ class DataSyncService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        cloudApi = Common.api
+
         //do heavy work on a background thread
         val input = intent?.getStringExtra("inputExtra")
         createNotificationChannel(this)
@@ -150,6 +160,34 @@ class DataSyncService : Service() {
 
     private fun doSync() {
         syncRunning = true
+
+        /*
+        val response = cloudApi.getProductList().execute()
+        if (response.isSuccessful() && response.body() != null) {
+            val res = response.body() as ProductList
+            if (res.result != null && res.id_list != null) {
+                if (res.result) {
+
+                }
+            }
+        }*/
+        /*
+        cloudApi.getProductList().enqueue(object : Callback<ProductList> {
+            override fun onFailure(call: Call<ProductList>, t: Throwable) {
+
+            }
+
+            override fun onResponse(call: Call<ProductList>, response: Response<ProductList>) {
+                if (response.isSuccessful() && response.body() != null) {
+                    val res = response.body() as ProductList
+                    if (res.result != null && res.id_list != null) {
+                        if (res.result) {
+
+                        }
+                    }
+                }
+            }
+        })*/
 
         Log.d(TAG, "Sync start")
         val inventory = getInstance()!!.getInventory()
