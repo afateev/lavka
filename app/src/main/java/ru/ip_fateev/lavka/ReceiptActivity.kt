@@ -12,10 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.launch
 import ru.ip_fateev.lavka.Inventory.Product
-import ru.ip_fateev.lavka.documents.LocalDatabase
-import ru.ip_fateev.lavka.documents.Position
-import ru.ip_fateev.lavka.documents.Receipt
-import ru.ip_fateev.lavka.documents.ReceiptType
+import ru.ip_fateev.lavka.documents.*
 
 class ReceiptActivity : AppCompatActivity() {
     companion object {
@@ -49,12 +46,12 @@ class ReceiptActivity : AppCompatActivity() {
         documents = LocalDatabase.instance(this)
 
         val localRepository = App.getInstance()?.getRepository()
-        val receiptLive = localRepository?.sellReceipt
+        val receiptLive = localRepository?.newSellReceipt
         if (receiptLive != null) {
             receiptLive.observe(this) {
                 receipt -> receipt.let {
                     if (it == null) {
-                        val receipt = Receipt(id = 0, type = receiptType)
+                        val receipt = Receipt(id = 0, type = receiptType, state = ReceiptState.NEW)
                         lifecycleScope.launch {
                             if (localRepository != null) {
                                 localRepository.insertReceipt(receipt)

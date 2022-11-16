@@ -12,6 +12,6 @@ interface ReceiptDao {
     @Insert
     suspend fun insert(receipt: Receipt)
 
-    @Query("SELECT * FROM receipt WHERE type = :type ORDER BY id DESC LIMIT 1")
-    fun get(type: ReceiptType): Flow<Receipt>
+    @Query("SELECT * FROM receipt WHERE type = :type AND state = :state ORDER BY id DESC LIMIT 1")
+    fun get(type: ReceiptType, state: ReceiptState): Flow<Receipt>
 }

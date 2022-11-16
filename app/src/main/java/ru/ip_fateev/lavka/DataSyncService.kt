@@ -8,81 +8,19 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
-import android.util.Pair
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import org.json.JSONException
-import org.json.JSONObject
 import ru.ip_fateev.lavka.App.Companion.getInstance
 import ru.ip_fateev.lavka.Inventory.Product
 import ru.ip_fateev.lavka.cloud.Api
 import ru.ip_fateev.lavka.cloud.common.Common
 import ru.ip_fateev.lavka.cloud.model.ProductList
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.*
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-
-internal class ApiProductListGetResult(root: JSONObject) {
-    var valid = false
-    var result = false
-    var id_list: MutableList<Long> = ArrayList()
-
-    init {
-        fromJson(root)
-    }
-
-    fun fromJson(root: JSONObject) {
-        try {
-            result = root.getBoolean("result")
-            val id_list_tmp = root.getJSONArray("id_list")
-            for (i in 0 until id_list_tmp.length()) {
-                id_list.add(id_list_tmp.getLong(i))
-            }
-            valid = true
-        } catch (e: JSONException) {
-            e.printStackTrace()
-        }
-    }
-}
-
-internal class ApiProductGetResult(root: JSONObject) {
-    var valid = false
-    var result = false
-    var product_id: Long? = null
-    var name = ""
-    var barcode = ""
-    var price: Double? = null
-
-    init {
-        fromJson(root)
-    }
-
-    fun fromJson(root: JSONObject) {
-        try {
-            result = root.getBoolean("result")
-            product_id = root.getLong("product_id")
-            name = root.getString("name")
-            barcode = root.getString("barcode")
-            price = root.getDouble("price")
-            valid = true
-        } catch (e: JSONException) {
-            e.printStackTrace()
-        }
-    }
-}
 
 class DataSyncService : Service() {
     private val CHANNEL_ID = "DataSync Service"
     private lateinit var notificationBuilder: NotificationCompat.Builder
     private val TAG = "DataSync Service"
-    private val API_URL = "https://ip-fateev.ru/api"
-    private val API_URL_PRODUCT_LIST = "$API_URL/product/list"
-    private val API_URL_PRODUCT_GET = "$API_URL/product/"
 
     lateinit var cloudApi: Api
     var syncRunning = false
@@ -161,143 +99,56 @@ class DataSyncService : Service() {
     private fun doSync() {
         syncRunning = true
 
-        /*
-        val response = cloudApi.getProductList().execute()
-        if (response.isSuccessful() && response.body() != null) {
-            val res = response.body() as ProductList
-            if (res.result != null && res.id_list != null) {
-                if (res.result) {
-
-                }
-            }
-        }*/
-        /*
-        cloudApi.getProductList().enqueue(object : Callback<ProductList> {
-            override fun onFailure(call: Call<ProductList>, t: Throwable) {
-
-            }
-
-            override fun onResponse(call: Call<ProductList>, response: Response<ProductList>) {
-                if (response.isSuccessful() && response.body() != null) {
-                    val res = response.body() as ProductList
-                    if (res.result != null && res.id_list != null) {
-                        if (res.result) {
-
-                        }
-                    }
-                }
-            }
-        })*/
-
         Log.d(TAG, "Sync start")
         val inventory = getInstance()!!.getInventory()
 
-        val getProductListResult: Pair<Boolean, JSONObject?> = syncRequestGetJson(API_URL_PRODUCT_LIST)
+        val productListResponse = cloudApi.getProductList().execute()
+        Log.d(TAG, "productListResponse:\n ${productListResponse.body()}")
+        if (productListResponse.isSuccessful() && productListResponse.body() != null) {
+            val productList = productListResponse.body() as ProductList
+            if (productList.result && productList.id_list != null) {
+                val productIdList: MutableList<Long> = ArrayList()
+                val localProductList = inventory!!.productList
+                localProductList.forEach { productIdList += it.id }
 
-        if (getProductListResult.first) {
-            val res = getProductListResult.second?.let { ApiProductListGetResult(it) }
-            if (res != null) {
-                if (res.valid && res.result) {
-                    val productList = inventory!!.productList
-                    val productIdList: MutableList<Long> = ArrayList()
-                    for (i in productList.indices) {
-                        productIdList.add(productList[i].id)
-                    }
+                // ЧТО ДОБАВИТЬ вычитаем из полученного списка, то что у нас есть
+                val forAdd: MutableList<Long> = ArrayList(productList.id_list)
+                forAdd.removeAll(productIdList)
 
-                    // ЧТО ДОБАВИТЬ вычитаем из полученного списка, то что у нас есть
-                    val forAdd: MutableList<Long> = ArrayList(res.id_list)
-                    forAdd.removeAll(productIdList)
+                // ЧТО УДАЛИТЬ вычитаем из нашего списка то, что получили
+                val forRemove: MutableList<Long> = ArrayList(productIdList)
+                forRemove.removeAll(productList.id_list!!)
 
-                    // ЧТО УДАЛИТЬ вычитаем из нашего списка то, что получили
-                    val forRemove: MutableList<Long> = ArrayList(productIdList)
-                    forRemove.removeAll(res.id_list)
+                // ЧТО СРАВНИТЬ вычитаем из списка, который получили, то что добавляем и то что удаляем
+                val forCompare: MutableList<Long> = ArrayList(productList.id_list)
+                forCompare.removeAll(forAdd)
+                forCompare.removeAll(forRemove)
 
-                    // ЧТО СРАВНИТЬ вычитаем из списка, который получили, то что удаляем и то что удаляем
-                    val forCompare: MutableList<Long> = ArrayList(res.id_list)
-                    forCompare.removeAll(forAdd)
-                    forCompare.removeAll(forRemove)
-
-                    // скачиваем себе, то что нужно добавить
-                    for (i in forAdd.indices) {
-                        val id = forAdd[i]
-                        val getProductResult: Pair<Boolean, JSONObject?> =
-                            syncRequestGetJson(API_URL_PRODUCT_GET + id.toString())
-                        if (getProductResult.first) {
-                            val product = getProductResult.second?.let { ApiProductGetResult(it) }
-                            if (product != null) {
-                                if (product.valid && product.result) {
-                                    val newProduct = Product()
-                                    newProduct.id = product.product_id!!
-                                    newProduct.name = product.name
-                                    newProduct.barcode = product.barcode
-                                    newProduct.price = product.price
-                                    inventory.InsertProduct(newProduct)
-                                }
-                            }
+                // скачиваем себе, то что нужно добавить
+                Log.d(TAG, "For add: ${forAdd.size}")
+                forAdd.forEach {
+                    val productResponse = cloudApi.getProduct(it).execute()
+                    Log.d(TAG, "productResponse:\n ${productResponse.body()}")
+                    if (productResponse.isSuccessful() && productResponse.body() != null) {
+                        val product = productResponse.body() as ru.ip_fateev.lavka.cloud.model.Product
+                        if (product.result) {
+                                val newProduct = Product()
+                                newProduct.id = product.product_id!!
+                                newProduct.name = product.name
+                                newProduct.barcode = product.barcode
+                                newProduct.price = product.price
+                                inventory.InsertProduct(newProduct)
                         }
                     }
                 }
+
+                Log.d(TAG, "For remove: ${forRemove.size}")
+                Log.d(TAG, "For compare: ${forCompare.size}")
             }
-            Log.d(TAG, "Response is:\n $res")
         }
 
         Log.d(TAG, "Sync complete")
 
         syncRunning = false
-    }
-
-    private fun syncRequestGetJson(urlString: String): Pair<Boolean, JSONObject?> {
-        var result = false
-        var response: JSONObject? = null
-        val res: Pair<Boolean, String?> = syncRequestGet(urlString)
-        if (res.first) {
-            try {
-                response = res.second?.let { JSONObject(it) }
-                result = true
-                Log.d(TAG, "Get JSON Response is:\n $response")
-            } catch (e: JSONException) {
-                e.printStackTrace()
-            }
-        } else {
-            Log.d(TAG, """Get JSON Response is: ${res.second}""")
-        }
-        return Pair(result, response)
-    }
-
-    private fun syncRequestGet(urlString: String): Pair<Boolean, String?> {
-        var result = false
-        var response: String? = ""
-        try {
-            val url = URL(urlString)
-            val urlConnection = url.openConnection() as HttpURLConnection
-            urlConnection.requestMethod = "GET"
-            urlConnection.connectTimeout = 5000
-            urlConnection.readTimeout = 5000
-            urlConnection.useCaches = false
-            urlConnection.connect()
-            val responseCode = urlConnection.responseCode
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                val stream = urlConnection.errorStream
-                val bufferedReader = BufferedReader(InputStreamReader(stream))
-                var s: String?
-                while (bufferedReader.readLine().also { s = it } != null) {
-                    response += s
-                }
-                bufferedReader.close()
-            } else {
-                val stream = urlConnection.inputStream
-                val bufferedReader = BufferedReader(InputStreamReader(stream))
-                var s: String?
-                while (bufferedReader.readLine().also { s = it } != null) {
-                    response += s
-                }
-                bufferedReader.close()
-                result = true
-            }
-            urlConnection.disconnect()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return Pair(result, response)
     }
 }

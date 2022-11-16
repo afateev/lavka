@@ -8,5 +8,6 @@ import androidx.room.PrimaryKey
 @Entity
 data class Receipt (
     @PrimaryKey(autoGenerate = true) val id: Long,
-    val type: ReceiptType
+    val type: ReceiptType,
+    val state: ReceiptState
         )
