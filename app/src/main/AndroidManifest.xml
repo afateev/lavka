@@ -33,16 +33,6 @@
         </activity>
 
         <service android:name=".DataSyncService" />
-        <service
-            android:name="ru.sberbank.uposnative.evotor_driver.EvotorUsbService"
-            android:enabled="true"
-            android:exported="true"
-            android:label="UPOS Driver">
-            <intent-filter>
-                <action android:name="ru.evotor.devices.drivers.DriverManager" />
-                <action android:name="ru.evotor.devices.drivers.PaySystemService" />
-            </intent-filter>
-        </service>
 
         <activity
             android:name=".InventoryActivity"

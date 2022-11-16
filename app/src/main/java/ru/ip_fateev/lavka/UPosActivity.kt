@@ -5,6 +5,7 @@ import android.hardware.usb.UsbManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import ru.sberbank.uposnative.evotor_driver.EvotorUsbService
 
 class UPosActivity : AppCompatActivity() {
     var TAG: String = "Lavka UPos Activity"
@@ -29,6 +30,8 @@ class UPosActivity : AppCompatActivity() {
 
             if (vid_pidList.contains(Pair(dev.vendorId, dev.productId))) {
                 supportedDevList.add(dev)
+                val connection = usbManager.openDevice(dev)
+                EvotorUsbService.setConnection(connection)
             }
         }
 

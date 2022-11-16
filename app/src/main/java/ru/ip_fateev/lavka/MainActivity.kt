@@ -178,9 +178,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        InitEvotorDriverManager()
-        InitEvotorPaySystemService()
-
         //инициализация upos native
         val arrayMap: ArrayMap<Settings, String> = ArrayMap<Settings, String>()
         val absolutePath: String = applicationContext.getFilesDir().getAbsolutePath()
@@ -201,48 +198,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-
-        if (evotorDriverManager != null) {
-            unbindService(evotorDriverManagerConnection)
-        }
-
-        if (evotorPaySystemService != null) {
-            unbindService(evotorPaySystemServiceConnection)
-        }
-    }
-
-    private fun InitEvotorDriverManager() {
-        val serviceIntent = Intent("ru.evotor.devices.drivers.DriverManager")
-        val resolvedList = packageManager.queryIntentServices(serviceIntent, 0)
-        Log.d(TAG,resolvedList.toString());
-
-        for (i in resolvedList) {
-            if (i.serviceInfo != null) {
-                Log.d(TAG, i.serviceInfo.toString());
-                val intent = Intent("ru.evotor.devices.drivers.DriverManager")
-                intent.setPackage(i.serviceInfo.packageName)
-                val res = bindService(intent, evotorDriverManagerConnection, BIND_AUTO_CREATE)
-                Log.d(TAG, res.toString());
-                break
-            }
-        }
-    }
-
-    private fun InitEvotorPaySystemService() {
-        val serviceIntent = Intent("ru.evotor.devices.drivers.PaySystemService")
-        val resolvedList = packageManager.queryIntentServices(serviceIntent, 0)
-        Log.d(TAG,resolvedList.toString());
-
-        for (i in resolvedList) {
-            if (i.serviceInfo != null) {
-                Log.d(TAG, i.serviceInfo.toString());
-                val intent = Intent("ru.evotor.devices.drivers.PaySystemService")
-                intent.setPackage(i.serviceInfo.packageName)
-                val res = bindService(intent, evotorPaySystemServiceConnection, BIND_AUTO_CREATE)
-                Log.d(TAG, res.toString());
-                break
-            }
-        }
     }
 
     fun onSellClick(view: View) {
