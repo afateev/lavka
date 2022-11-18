@@ -1,5 +1,6 @@
 package ru.ip_fateev.lavka
 
+import android.app.Activity
 import android.content.*
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
@@ -8,6 +9,8 @@ import android.os.IBinder
 import android.util.ArrayMap
 import android.util.Log
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContract
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import ru.evotor.devices.drivers.IPaySystemDriverService
 import ru.evotor.devices.drivers.IUsbDriverManagerService
@@ -174,6 +177,27 @@ class MainActivity : AppCompatActivity() {
 
     var listener = Listener()
 
+    class NewReceipt : ActivityResultContract<Int, Long?>() {
+        override fun createIntent(context: Context, input: Int): Intent =
+            Intent(context, ReceiptActivity::class.java).apply {
+                action = "ru.ip_fateev.lavka.ACTION_NEW_RECEIPT"
+                putExtra(ReceiptActivity.EXTRA_RECEIPT_TYPE, ReceiptActivity.RECEIPT_TYPE_SELL)
+            }
+
+        override fun parseResult(resultCode: Int, intent: Intent?): Long? {
+            if (resultCode != Activity.RESULT_OK) {
+                return null
+            }
+            return intent?.getLongExtra("receiptId", 0)
+        }
+    }
+
+    private val newReceipt = registerForActivityResult(NewReceipt()) {
+        if (it != null) {
+
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -200,11 +224,14 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
+
+
     fun onSellClick(view: View) {
-        var intent = Intent(this, ReceiptActivity::class.java)
+        /*var intent = Intent(this, ReceiptActivity::class.java)
         intent.action = "ru.ip_fateev.lavka.ACTION_NEW_RECEIPT"
         intent.putExtra(ReceiptActivity.EXTRA_RECEIPT_TYPE, ReceiptActivity.RECEIPT_TYPE_SELL)
-        startActivity(intent)
+        startActivity(intent)*/
+        newReceipt.launch(0)
     }
 
     fun onPosClick(view: View) {

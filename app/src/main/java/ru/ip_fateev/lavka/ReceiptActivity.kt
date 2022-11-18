@@ -113,5 +113,9 @@ class ReceiptActivity : AppCompatActivity() {
         }
 
     fun onClickPay(view: View) {
+        val intent = Intent()
+        intent.putExtra("receiptId", receiptId)
+        setResult(RESULT_OK, intent)
+        finish()
     }
 }
