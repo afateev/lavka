@@ -119,7 +119,7 @@ class ReceiptActivity : AppCompatActivity() {
         override fun createIntent(context: Context, input: Long): Intent =
             Intent(context, PayActivity::class.java).apply {
                 action = "ru.ip_fateev.lavka.ACTION_PAY_RECEIPT"
-                putExtra("receiptId", input)
+                putExtra(PayActivity.EXTRA_RECEIPT_ID, input)
             }
 
         override fun parseResult(resultCode: Int, intent: Intent?): Long? {

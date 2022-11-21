@@ -10,6 +10,7 @@ class LocalRepository(
 ) {
     val newSellReceipt: LiveData<Receipt> = receiptDao.get(ReceiptType.SELL, ReceiptState.NEW).asLiveData()
     suspend fun insertReceipt(receipt: Receipt){ receiptDao.insert(receipt) }
+    fun getReceipt(id: Long): LiveData<Receipt> {return receiptDao.get(id).asLiveData()}
 
     fun getPositions(docId: Long): LiveData<List<Position>> { return positionDao.get(docId).asLiveData() }
     suspend fun insertPosition(position: Position){ positionDao.insert(position) }
