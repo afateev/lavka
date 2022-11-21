@@ -19,28 +19,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Lavka"
         tools:targetApi="31">
+
         <service
             android:name=".UposService"
             android:enabled="true"
-            android:exported="true"></service>
-
-        <activity
-            android:name=".ReceiptActivity"
-            android:exported="true">
-            <meta-data
-                android:name="android.app.lib_name"
-                android:value="" />
-        </activity>
+            android:exported="true" />
 
         <service android:name=".DataSyncService" />
 
-        <activity
-            android:name=".InventoryActivity"
-            android:exported="true">
-            <meta-data
-                android:name="android.app.lib_name"
-                android:value="" />
-        </activity>
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -54,6 +40,31 @@
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
+
+        <activity
+            android:name=".InventoryActivity"
+            android:exported="true">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+
+        <activity
+            android:name=".ReceiptActivity"
+            android:exported="true">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+
+        <activity
+            android:name=".PayActivity"
+            android:exported="false">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+
         <activity
             android:name=".UPosActivity"
             android:exported="true">

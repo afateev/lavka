@@ -14,4 +14,7 @@ interface ReceiptDao {
 
     @Query("SELECT * FROM receipt WHERE type = :type AND state = :state ORDER BY id DESC LIMIT 1")
     fun get(type: ReceiptType, state: ReceiptState): Flow<Receipt>
+
+    @Query("UPDATE receipt SET state = :state WHERE id = :id")
+    fun setSate(id: Long, state: ReceiptState)
 }

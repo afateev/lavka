@@ -1,11 +1,13 @@
 package ru.ip_fateev.lavka
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
@@ -70,6 +72,7 @@ class ReceiptActivity : AppCompatActivity() {
                                             val p = Product()
                                             p.id = i.productId
                                             p.name = i.productName
+                                            p.price = i.price
                                             pList.add(p)
                                         }
                                         adapter.updateList(pList)
@@ -103,7 +106,7 @@ class ReceiptActivity : AppCompatActivity() {
                 if (receiptId != null) {
                     val localRepository = App.getInstance()?.getRepository()
                     val i = adapter.itemCount
-                    val position = Position(0, docId = receiptId!!, number = i, productId = product.id, productName = product.name)
+                    val position = Position(0, docId = receiptId!!, number = i, productId = product.id, productName = product.name, price = product.price)
                     lifecycleScope.launch {
                         localRepository?.insertPosition(position)
                     }
@@ -112,10 +115,31 @@ class ReceiptActivity : AppCompatActivity() {
             }
         }
 
+    class PayReceipt : ActivityResultContract<Long, Long?>() {
+        override fun createIntent(context: Context, input: Long): Intent =
+            Intent(context, PayActivity::class.java).apply {
+                action = "ru.ip_fateev.lavka.ACTION_PAY_RECEIPT"
+                putExtra("receiptId", input)
+            }
+
+        override fun parseResult(resultCode: Int, intent: Intent?): Long? {
+            if (resultCode != Activity.RESULT_OK) {
+                return null
+            }
+            return intent?.getLongExtra("receiptId", 0)
+        }
+    }
+
+    private val payReceipt = registerForActivityResult(PayReceipt()) {
+        if (it != null) {
+            val intent = Intent()
+            intent.putExtra("receiptId", receiptId)
+            setResult(RESULT_OK, intent)
+            finish()
+        }
+    }
+
     fun onClickPay(view: View) {
-        val intent = Intent()
-        intent.putExtra("receiptId", receiptId)
-        setResult(RESULT_OK, intent)
-        finish()
+        payReceipt.launch(receiptId)
     }
 }

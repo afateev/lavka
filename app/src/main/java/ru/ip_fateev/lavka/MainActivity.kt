@@ -10,13 +10,10 @@ import android.util.ArrayMap
 import android.util.Log
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContract
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import ru.evotor.devices.drivers.IPaySystemDriverService
 import ru.evotor.devices.drivers.IUsbDriverManagerService
-import ru.evotor.devices.drivers.paysystem.PayInfo
 import ru.sberbank.uposcore.*
-import java.math.BigDecimal
 import java.util.*
 
 
@@ -177,7 +174,7 @@ class MainActivity : AppCompatActivity() {
 
     var listener = Listener()
 
-    class NewReceipt : ActivityResultContract<Int, Long?>() {
+    class NewSellReceipt : ActivityResultContract<Int, Long?>() {
         override fun createIntent(context: Context, input: Int): Intent =
             Intent(context, ReceiptActivity::class.java).apply {
                 action = "ru.ip_fateev.lavka.ACTION_NEW_RECEIPT"
@@ -192,7 +189,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val newReceipt = registerForActivityResult(NewReceipt()) {
+    private val newSellReceipt = registerForActivityResult(NewSellReceipt()) {
         if (it != null) {
 
         }
@@ -224,14 +221,12 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-
-
     fun onSellClick(view: View) {
         /*var intent = Intent(this, ReceiptActivity::class.java)
         intent.action = "ru.ip_fateev.lavka.ACTION_NEW_RECEIPT"
         intent.putExtra(ReceiptActivity.EXTRA_RECEIPT_TYPE, ReceiptActivity.RECEIPT_TYPE_SELL)
         startActivity(intent)*/
-        newReceipt.launch(0)
+        newSellReceipt.launch(0)
     }
 
     fun onPosClick(view: View) {

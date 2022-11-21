@@ -10,4 +10,5 @@ data class Position (
     val number: Int,
     val productId: Long,
     val productName: String,
+    val price: Double,
 )
