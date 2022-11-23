@@ -6,7 +6,7 @@ class ReceiptDrawer(_receipt: Receipt?, _positions: List<Position>?) {
     companion object {
         val COLOR_BACKGROUND = Color.rgb(250, 250, 250)
         val COLOR_TEXT = Color.BLACK
-        val FONT_SIZE = 24F
+        val FONT_SIZE = 20F
 
         val ALIGN_LEFT = 0
         val ALIGN_CENTER = 1
@@ -53,10 +53,10 @@ class ReceiptDrawer(_receipt: Receipt?, _positions: List<Position>?) {
 
     fun toBimap(): Bitmap {
         val strHeight = FONT_SIZE + 1
-        val lines = toStrings(40)
-        val bitmapHeight = ((lines.size + 2) * strHeight).toInt()
+        val lines = toStrings(46)
+        val bitmapHeight = ((lines.size + 10) * strHeight).toInt()
 
-        val bitmap = Bitmap.createBitmap(600, bitmapHeight, Bitmap.Config.ARGB_8888)
+        val bitmap = Bitmap.createBitmap(570, bitmapHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         canvas.drawColor(COLOR_BACKGROUND)
 
