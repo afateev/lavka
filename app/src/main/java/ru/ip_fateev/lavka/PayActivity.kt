@@ -4,10 +4,10 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import android.widget.Button
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -19,12 +19,9 @@ import net.posprinter.utils.BitmapToByteData
 import net.posprinter.utils.DataForSendToPrinterPos80
 import net.posprinter.utils.PosPrinterDev
 import ru.ip_fateev.lavka.documents.ReceiptDrawer
-import java.io.UnsupportedEncodingException
 
 class PayActivity : AppCompatActivity() {
     var receiptId: Long? = null
-    lateinit var tempBitmap: Bitmap
-    lateinit var tempCanvas: Canvas
 
     companion object {
         val EXTRA_RECEIPT_ID = "ReceiptId"
@@ -34,9 +31,10 @@ class PayActivity : AppCompatActivity() {
     var binder: IMyBinder? = null
     var usbList: MutableList<String>? = null
 
-    var receiptLines: List<String> = listOf()
     var receiptBitmap: Bitmap? = null
 
+    lateinit var buttonPayCash: Button
+    lateinit var buttonPayCard: Button
     lateinit var fabPrint: FloatingActionButton
 
     //bindService connection
@@ -77,6 +75,8 @@ class PayActivity : AppCompatActivity() {
         receiptId = intent.getLongExtra(EXTRA_RECEIPT_ID, 0)
         val imageView = findViewById<ImageView>(R.id.payImageView)
 
+        buttonPayCash = findViewById(R.id.payCash)
+        buttonPayCard = findViewById(R.id.payCard)
         fabPrint = findViewById(R.id.fabPrint)
 
         fabPrint.setOnClickListener{
@@ -102,7 +102,6 @@ class PayActivity : AppCompatActivity() {
                         it?.observe(this) { position ->
                             if (position != null) {
                                 val receiptDrawer = ReceiptDrawer(receipt, position)
-                                receiptLines = receiptDrawer.toStrings(40)
                                 receiptBitmap = receiptDrawer.toBimap()
                                 imageView.setImageBitmap(receiptBitmap)
                             }
@@ -113,45 +112,6 @@ class PayActivity : AppCompatActivity() {
         }
 
         imageView.setImageBitmap(ReceiptDrawer(null, null).toBimap())
-    }
-
-    private fun printText() {
-        binder!!.writeDataByYouself(
-            object : UiExecute {
-                override fun onsucess() {
-                    Log.e("binder", "usb printed")
-                }
-                override fun onfailed() {
-                    Log.e("binder", "usb print fail")
-                }
-            }, ProcessData {
-                val list: MutableList<ByteArray> = java.util.ArrayList()
-                //creat a text ,and make it to byte[],
-                val str: String = "test"
-
-                //initialize the printer
-//                            list.add( DataForSendToPrinterPos58.initializePrinter());
-                list.add(DataForSendToPrinterPos80.initializePrinter())
-
-                for (l in receiptLines) {
-                    val data1: ByteArray? = StringUtils.strTobytes(l)
-                    if (data1 != null) {
-                        list.add(data1)
-                    }
-                    //should add the command of print and feed line,because print only when one line is complete, not one line, no print
-
-                    list.add(DataForSendToPrinterPos80.printAndFeedLine())
-                }
-                //cut pager
-                list.add(
-                    DataForSendToPrinterPos80.selectCutPagerModerAndCutPager(
-                        66,
-                        1
-                    )
-                )
-                return@ProcessData list
-
-            })
     }
 
     private fun print() {
@@ -232,46 +192,5 @@ class PayActivity : AppCompatActivity() {
             bitmaps.add(b)
         }
         return bitmaps
-    }
-}
-
-object StringUtils {
-    /**
-     * string to byte[]
-     */
-    fun strTobytes(str: String): ByteArray? {
-        var b: ByteArray? = null
-        var data: ByteArray? = null
-        try {
-            b = str.toByteArray(charset("utf-8"))
-            data = String(b, Charsets.UTF_8).toByteArray(charset("gbk"))
-        } catch (e: UnsupportedEncodingException) {
-            // TODO Auto-generated catch block
-            e.printStackTrace()
-        }
-        return data
-    }
-
-    /**
-     * byte[] merger
-     */
-    fun byteMerger(byte_1: ByteArray, byte_2: ByteArray): ByteArray {
-        val byte_3 = ByteArray(byte_1.size + byte_2.size)
-        System.arraycopy(byte_1, 0, byte_3, 0, byte_1.size)
-        System.arraycopy(byte_2, 0, byte_3, byte_1.size, byte_2.size)
-        return byte_3
-    }
-
-    fun strTobytes(str: String, charset: String?): ByteArray? {
-        var b: ByteArray? = null
-        var data: ByteArray? = null
-        try {
-            b = str.toByteArray(charset("utf-8"))
-            data = String(b, Charsets.UTF_8).toByteArray(charset(charset!!))
-        } catch (e: UnsupportedEncodingException) {
-            // TODO Auto-generated catch block
-            e.printStackTrace()
-        }
-        return data
     }
 }
