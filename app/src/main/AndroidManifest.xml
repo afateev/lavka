@@ -24,9 +24,7 @@
             android:name=".UposService"
             android:enabled="true"
             android:exported="true" />
-
         <service android:name=".DataSyncService" />
-
         <service android:name="net.posprinter.service.PosprinterService" />
 
         <activity
@@ -42,7 +40,6 @@
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
-
         <activity
             android:name=".InventoryActivity"
             android:exported="true">
@@ -50,7 +47,6 @@
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
-
         <activity
             android:name=".ReceiptActivity"
             android:exported="true">
@@ -58,7 +54,6 @@
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
-
         <activity
             android:name=".PayActivity"
             android:exported="false">
@@ -66,7 +61,13 @@
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
-
+        <activity
+            android:name=".PayCashActivity"
+            android:exported="false">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
         <activity
             android:name=".UPosActivity"
             android:exported="true">

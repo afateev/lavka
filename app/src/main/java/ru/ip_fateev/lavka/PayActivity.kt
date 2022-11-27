@@ -1,6 +1,8 @@
 package ru.ip_fateev.lavka
 
+import android.app.Activity
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.graphics.Bitmap
@@ -9,6 +11,7 @@ import android.os.IBinder
 import android.util.Log
 import android.widget.Button
 import android.widget.ImageView
+import androidx.activity.result.contract.ActivityResultContract
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import net.posprinter.posprinterface.IMyBinder
@@ -24,7 +27,10 @@ class PayActivity : AppCompatActivity() {
     var receiptId: Long? = null
 
     companion object {
-        val EXTRA_RECEIPT_ID = "ReceiptId"
+        const val EXTRA_RECEIPT_ID = "ReceiptId"
+        const val PAY_TYPE_UNKNOWN = 0
+        const val PAY_TYPE_CASH = 1
+        const val PAY_TYPE_CARD = 2
     }
 
     //IMyBinder interface，All methods that can be invoked to connect and send data are encapsulated within this interface
@@ -79,6 +85,14 @@ class PayActivity : AppCompatActivity() {
         buttonPayCard = findViewById(R.id.payCard)
         fabPrint = findViewById(R.id.fabPrint)
 
+        buttonPayCash.setOnClickListener {
+            pay(PAY_TYPE_CASH)
+        }
+
+        buttonPayCard.setOnClickListener {
+            pay(PAY_TYPE_CARD)
+        }
+
         fabPrint.setOnClickListener{
             print()
         }
@@ -112,6 +126,37 @@ class PayActivity : AppCompatActivity() {
         }
 
         imageView.setImageBitmap(ReceiptDrawer(null, null).toBimap())
+    }
+
+    private fun pay(type: Int) {
+        if (type == PAY_TYPE_CASH) {
+            val result = payCash.launch(receiptId)
+        }
+
+    }
+
+    class PayCash : ActivityResultContract<Long, Double?>() {
+        override fun createIntent(context: Context, input: Long): Intent =
+            Intent(context, PayCashActivity::class.java).apply {
+                action = "ru.ip_fateev.lavka.ACTION_PAY_CASH"
+                putExtra(PayCashActivity.EXTRA_AMOUNT, input)
+            }
+
+        override fun parseResult(resultCode: Int, intent: Intent?): Double? {
+            if (resultCode != Activity.RESULT_OK) {
+                return null
+            }
+            return intent?.getDoubleExtra("paid", 0.0)
+        }
+    }
+
+    private val payCash = registerForActivityResult(PayCash()) {
+        if (it != null) {
+            val intent = Intent()
+            intent.putExtra("receiptId", receiptId)
+            setResult(RESULT_OK, intent)
+            finish()
+        }
     }
 
     private fun print() {
