@@ -130,13 +130,13 @@ class PayActivity : AppCompatActivity() {
 
     private fun pay(type: Int) {
         if (type == PAY_TYPE_CASH) {
-            val result = payCash.launch(receiptId)
+            val result = payCash.launch(100.0)
         }
 
     }
 
-    class PayCash : ActivityResultContract<Long, Double?>() {
-        override fun createIntent(context: Context, input: Long): Intent =
+    class PayCash : ActivityResultContract<Double, Double?>() {
+        override fun createIntent(context: Context, input: Double): Intent =
             Intent(context, PayCashActivity::class.java).apply {
                 action = "ru.ip_fateev.lavka.ACTION_PAY_CASH"
                 putExtra(PayCashActivity.EXTRA_AMOUNT, input)
@@ -146,17 +146,21 @@ class PayActivity : AppCompatActivity() {
             if (resultCode != Activity.RESULT_OK) {
                 return null
             }
-            return intent?.getDoubleExtra("paid", 0.0)
+            return intent?.getDoubleExtra(PayCashActivity.EXTRA_SUM, 0.0)
         }
     }
 
     private val payCash = registerForActivityResult(PayCash()) {
         if (it != null) {
-            val intent = Intent()
-            intent.putExtra("receiptId", receiptId)
-            setResult(RESULT_OK, intent)
-            finish()
+
         }
+    }
+
+    private fun done() {
+        val intent = Intent()
+        intent.putExtra("receiptId", receiptId)
+        setResult(RESULT_OK, intent)
+        finish()
     }
 
     private fun print() {
