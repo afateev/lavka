@@ -14,7 +14,10 @@ import ru.ip_fateev.lavka.App.Companion.getInstance
 import ru.ip_fateev.lavka.Inventory.Product
 import ru.ip_fateev.lavka.cloud.Api
 import ru.ip_fateev.lavka.cloud.common.Common
+import ru.ip_fateev.lavka.cloud.model.Position
 import ru.ip_fateev.lavka.cloud.model.ProductList
+import ru.ip_fateev.lavka.cloud.model.Receipt
+import ru.ip_fateev.lavka.cloud.model.ReceiptType
 import java.util.*
 
 class DataSyncService : Service() {
@@ -101,6 +104,19 @@ class DataSyncService : Service() {
 
         Log.d(TAG, "Sync start")
         val inventory = getInstance()!!.getInventory()
+
+        var positions: MutableList<Position> = mutableListOf();
+        positions.add(Position(productId = 0, productName = "test", price = 100.0, count = 1))
+
+        val receipt = Receipt(
+            id = UUID.randomUUID(),
+            type = ReceiptType.SELL,
+            deviceUid = null,
+            timestamp = Calendar.getInstance().time,
+            positions = positions
+        )
+
+        val receiptResponse = cloudApi.postReceipt(receipt).execute()
 
         val productListResponse = cloudApi.getProductList().execute()
         Log.d(TAG, "productListResponse:\n ${productListResponse.body()}")
