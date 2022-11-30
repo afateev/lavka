@@ -2,7 +2,9 @@ package ru.ip_fateev.lavka.documents
 
 import android.graphics.*
 
-class ReceiptDrawer(_receipt: Receipt?, _positions: List<Position>?) {
+data class ReceiptDrawer(val receipt: Receipt? = null,
+                         var positions: List<Position>? = null,
+                         var transactions: List<Transaction>? = null,) {
     companion object {
         val COLOR_BACKGROUND = Color.rgb(250, 250, 250)
         val COLOR_TEXT = Color.BLACK
@@ -13,8 +15,7 @@ class ReceiptDrawer(_receipt: Receipt?, _positions: List<Position>?) {
         val ALIGN_RIGHT = 2
     }
 
-    val receipt: Receipt?
-    val positions: List<Position>?
+
 
     val paintText = Paint().apply {
         style = Paint.Style.FILL
@@ -22,11 +23,6 @@ class ReceiptDrawer(_receipt: Receipt?, _positions: List<Position>?) {
         isAntiAlias = false
         textSize = FONT_SIZE
         typeface = Typeface.MONOSPACE
-    }
-
-    init{
-        receipt = _receipt
-        positions = _positions
     }
 
     fun toStrings(limit: Int): List<String> {
@@ -39,12 +35,21 @@ class ReceiptDrawer(_receipt: Receipt?, _positions: List<Position>?) {
         }
 
         if (positions != null) {
-            for (p in positions) {
+            for (p in positions!!) {
                 var s1 = strF(3, (1 + p.number).toString() + ": ")
                 var s2 = strF(limit - 3, p.productName)
                 var s = s1 + s2
                 lines.add(s)
                 lines.add(strF(limit, "1 шт x " + p.price.toString() + " = " + p.price.toString(), ALIGN_RIGHT))
+            }
+        }
+
+        if (transactions != null) {
+            for (t in transactions!!) {
+                var s1 = strF(10, t.type.toString())
+                var s2 = strF(limit - 10, (t.amount / 100).toString())
+                var s = s1 + s2
+                lines.add(s)
             }
         }
 

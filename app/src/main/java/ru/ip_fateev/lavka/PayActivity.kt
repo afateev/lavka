@@ -13,7 +13,10 @@ import android.widget.Button
 import android.widget.ImageView
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.launch
 import net.posprinter.posprinterface.IMyBinder
 import net.posprinter.posprinterface.ProcessData
 import net.posprinter.posprinterface.UiExecute
@@ -22,6 +25,8 @@ import net.posprinter.utils.BitmapToByteData
 import net.posprinter.utils.DataForSendToPrinterPos80
 import net.posprinter.utils.PosPrinterDev
 import ru.ip_fateev.lavka.documents.ReceiptDrawer
+import ru.ip_fateev.lavka.documents.Transaction
+import ru.ip_fateev.lavka.documents.TransactionType
 
 class PayActivity : AppCompatActivity() {
     var receiptId: Long? = null
@@ -37,7 +42,8 @@ class PayActivity : AppCompatActivity() {
     var binder: IMyBinder? = null
     var usbList: MutableList<String>? = null
 
-    var receiptBitmap: Bitmap? = null
+    val receiptDrawer: MutableLiveData<ReceiptDrawer> by lazy { MutableLiveData<ReceiptDrawer>(ReceiptDrawer()) }
+    val receiptBitmap: MutableLiveData<Bitmap> by lazy { MutableLiveData<Bitmap>(receiptDrawer.value?.toBimap()) }
 
     lateinit var buttonPayCash: Button
     lateinit var buttonPayCard: Button
@@ -81,6 +87,14 @@ class PayActivity : AppCompatActivity() {
         receiptId = intent.getLongExtra(EXTRA_RECEIPT_ID, 0)
         val imageView = findViewById<ImageView>(R.id.payImageView)
 
+        receiptDrawer.observe(this) {
+            receiptBitmap.value = it.toBimap()
+        }
+;
+        receiptBitmap.observe(this) {
+            imageView.setImageBitmap(it)
+        }
+
         buttonPayCash = findViewById(R.id.payCash)
         buttonPayCard = findViewById(R.id.payCard)
         fabPrint = findViewById(R.id.fabPrint)
@@ -111,26 +125,30 @@ class PayActivity : AppCompatActivity() {
         val localRepository = App.getInstance()?.getRepository()
         localRepository?.getReceipt(receiptId!!).let {
             it?.observe(this) { receipt ->
+                receiptDrawer.value = ReceiptDrawer(receipt)
                 if (receipt != null) {
                     localRepository?.getPositions(receipt.id).let {
-                        it?.observe(this) { position ->
-                            if (position != null) {
-                                val receiptDrawer = ReceiptDrawer(receipt, position)
-                                receiptBitmap = receiptDrawer.toBimap()
-                                imageView.setImageBitmap(receiptBitmap)
+                        it?.observe(this) { positions ->
+                            if (positions != null) {
+                                receiptDrawer.value = receiptDrawer.value?.copy(positions = positions)
+                            }
+                        }
+                    }
+                    localRepository?.getTransactions(receipt.id).let {
+                        it?.observe(this) { transactions ->
+                            if (transactions != null) {
+                                receiptDrawer.value = receiptDrawer.value?.copy(transactions = transactions)
                             }
                         }
                     }
                 }
             }
         }
-
-        imageView.setImageBitmap(ReceiptDrawer(null, null).toBimap())
     }
 
     private fun pay(type: Int) {
         if (type == PAY_TYPE_CASH) {
-            val result = payCash.launch(100.0)
+            payCash.launch(100.0)
         }
 
     }
@@ -152,7 +170,15 @@ class PayActivity : AppCompatActivity() {
 
     private val payCash = registerForActivityResult(PayCash()) {
         if (it != null) {
+            val localRepository = App.getInstance()?.getRepository()
 
+            val amount = (it * 100).toLong()
+            val transaction = Transaction(id = 0, docId = receiptId!!, type = TransactionType.CASH, amount = amount, rrn = "")
+            lifecycleScope.launch {
+                if (localRepository != null) {
+                    localRepository.insertTransaction(transaction)
+                }
+            }
         }
     }
 
@@ -164,7 +190,7 @@ class PayActivity : AppCompatActivity() {
     }
 
     private fun print() {
-        val printBmp = receiptBitmap
+        val printBmp = receiptBitmap.value
 
         if (printBmp == null)
         {
