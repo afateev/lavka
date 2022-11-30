@@ -9,13 +9,19 @@ import android.text.TextWatcher
 import android.text.method.DigitsKeyListener
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.lifecycle.MutableLiveData
 import java.lang.Boolean
 import kotlin.CharSequence
+import kotlin.Double
 import kotlin.Int
 import kotlin.String
 import kotlin.arrayOf
+import kotlin.getValue
+import kotlin.lazy
+import kotlin.toString
 
 
 class PayCashActivity : AppCompatActivity() {
@@ -24,13 +30,20 @@ class PayCashActivity : AppCompatActivity() {
         const val EXTRA_SUM = "Sum"
     }
 
+    lateinit var payCashAmount: TextView
+    val payAmount: MutableLiveData<Double?> by lazy { MutableLiveData<Double?>(null) }
     lateinit var payCashSum: EditText
     val paySum: MutableLiveData<Double?> by lazy { MutableLiveData<Double?>(null) }
+    lateinit var payCashCancel: Button
     lateinit var payCashDone: Button
+    lateinit var payCashNoChange: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pay_cash)
+
+        payCashAmount = findViewById(R.id.payCashAmount)
+        payAmount.value = intent.getDoubleExtra(EXTRA_AMOUNT, 0.0)
 
         payCashSum = findViewById(R.id.payCashSum)
         payCashSum.filters = arrayOf<InputFilter>(
@@ -72,18 +85,58 @@ class PayCashActivity : AppCompatActivity() {
 
         })
 
+        payCashCancel = findViewById(R.id.payCashCancel)
+        payCashCancel.setOnClickListener {
+
+        }
+
         payCashDone = findViewById(R.id.payCashDone)
         payCashDone.setOnClickListener {
             payDone()
         }
 
-        paySum.observe(this) {
+        payCashNoChange = findViewById(R.id.payCashNoChange)
+        payCashNoChange.setOnClickListener {
+            paySum.value = payAmount.value
+            payDone()
+        }
+
+        payAmount.observe(this) {
             if (it != null) {
-                payCashDone.isEnabled = true
+                payCashAmount.text = payAmount.value.toString()
+                payCashCancel.isVisible = true
+                payCashDone.isVisible = true
+                payCashNoChange.isVisible = true
             }
             else
             {
-                payCashDone.isEnabled = false
+                payCashAmount.text = "---"
+                payCashCancel.isVisible = false
+                payCashDone.isVisible = false
+                payCashNoChange.isVisible = false
+            }
+        }
+
+        paySum.observe(this) {
+            if (it == null) {
+                payCashCancel.isVisible = false
+                payCashDone.isVisible = false
+                payCashNoChange.isVisible = true
+            }
+            else
+            {
+                payCashCancel.isVisible = true
+                payCashDone.isVisible = true
+                payCashNoChange.isVisible = false
+                if (payAmount.value != null) {
+                    if (paySum.value!! >= payAmount.value!!) {
+                        payCashDone.isEnabled = true
+                    }
+                    else
+                    {
+                        payCashDone.isEnabled = false
+                    }
+                }
             }
         }
     }

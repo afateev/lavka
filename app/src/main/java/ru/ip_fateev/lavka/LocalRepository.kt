@@ -6,7 +6,8 @@ import ru.ip_fateev.lavka.documents.*
 
 class LocalRepository(
     private val receiptDao: ReceiptDao,
-    private val positionDao: PositionDao
+    private val positionDao: PositionDao,
+    private val transactionDao: TransactionDao
 ) {
     val newSellReceipt: LiveData<Receipt> = receiptDao.get(ReceiptType.SELL, ReceiptState.NEW).asLiveData()
     suspend fun insertReceipt(receipt: Receipt){ receiptDao.insert(receipt) }
@@ -14,4 +15,7 @@ class LocalRepository(
 
     fun getPositions(docId: Long): LiveData<List<Position>> { return positionDao.get(docId).asLiveData() }
     suspend fun insertPosition(position: Position){ positionDao.insert(position) }
+
+    fun getTransactions(docId: Long): LiveData<List<Transaction>> { return transactionDao.get(docId).asLiveData() }
+    suspend fun insertTransaction(transaction: Transaction) { transactionDao.insert(transaction) }
 }

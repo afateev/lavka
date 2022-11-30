@@ -15,13 +15,14 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <TableRow
-            android:layout_width="match_parent"
+            android:layout_width="fill_parent"
             android:layout_height="match_parent">
 
             <TextView
                 android:id="@+id/textView5"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_weight="0"
                 android:text="К оплате"
                 android:textSize="34sp" />
 
@@ -36,21 +37,16 @@
         </TableRow>
 
         <TableRow
-            android:layout_width="match_parent"
+            android:layout_width="fill_parent"
             android:layout_height="match_parent">
 
             <TextView
                 android:id="@+id/textView6"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_weight="0"
                 android:text="Принято"
                 android:textSize="34sp" />
-
-            <Button
-                android:id="@+id/button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:icon="@android:drawable/ic_menu_close_clear_cancel" />
 
             <EditText
                 android:id="@+id/payCashSum"
@@ -65,13 +61,14 @@
         </TableRow>
 
         <TableRow
-            android:layout_width="match_parent"
+            android:layout_width="fill_parent"
             android:layout_height="match_parent">
 
             <TextView
                 android:id="@+id/textView7"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="147dp"
+                android:layout_height="match_parent"
+                android:layout_weight="0"
                 android:text="Сдача"
                 android:textSize="34sp" />
 
@@ -87,15 +84,35 @@
         </TableRow>
 
         <TableRow
-            android:layout_width="match_parent"
+            android:layout_width="fill_parent"
             android:layout_height="match_parent">
 
             <Button
+                android:id="@+id/payCashCancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Отмена" />
+
+            <Button
                 android:id="@+id/payCashDone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Оплатить" />
+        </TableRow>
+
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_height="match_parent">
+
+            <Button
+                android:id="@+id/payCashNoChange"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_span="3"
-                android:text="Button" />
+                android:layout_span="2"
+                android:layout_weight="1"
+                android:text="Оплаить без сдачи" />
         </TableRow>
     </TableLayout>
 

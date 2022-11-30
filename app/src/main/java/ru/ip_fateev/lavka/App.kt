@@ -23,7 +23,7 @@ class App : Application() {
         instance = this
         inventory = LocalData(applicationContext, "data_test1")
         database = LocalDatabase.instance(this)
-        localRepository = LocalRepository(database.receiptDao(), database.positionDao())
+        localRepository = LocalRepository(database.receiptDao(), database.positionDao(), database.transactionDao())
         //DataSyncService.startService(this, "DataSync Service running...")
         UposService.startService(this, "UPOS Service running...")
     }
