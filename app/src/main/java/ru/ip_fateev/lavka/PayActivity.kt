@@ -11,6 +11,7 @@ import android.os.IBinder
 import android.util.Log
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.MutableLiveData
@@ -24,7 +25,7 @@ import net.posprinter.service.PosprinterService
 import net.posprinter.utils.BitmapToByteData
 import net.posprinter.utils.DataForSendToPrinterPos80
 import net.posprinter.utils.PosPrinterDev
-import ru.ip_fateev.lavka.documents.ReceiptDrawer
+import ru.ip_fateev.lavka.documents.ReceiptHelper
 import ru.ip_fateev.lavka.documents.Transaction
 import ru.ip_fateev.lavka.documents.TransactionType
 
@@ -42,9 +43,10 @@ class PayActivity : AppCompatActivity() {
     var binder: IMyBinder? = null
     var usbList: MutableList<String>? = null
 
-    val receiptDrawer: MutableLiveData<ReceiptDrawer> by lazy { MutableLiveData<ReceiptDrawer>(ReceiptDrawer()) }
-    val receiptBitmap: MutableLiveData<Bitmap> by lazy { MutableLiveData<Bitmap>(receiptDrawer.value?.toBimap()) }
+    val receiptHelper: MutableLiveData<ReceiptHelper> by lazy { MutableLiveData<ReceiptHelper>(ReceiptHelper()) }
+    val receiptBitmap: MutableLiveData<Bitmap> by lazy { MutableLiveData<Bitmap>(receiptHelper.value?.toBimap()) }
 
+    lateinit var payRemainder: TextView
     lateinit var buttonPayCash: Button
     lateinit var buttonPayCard: Button
     lateinit var fabPrint: FloatingActionButton
@@ -86,18 +88,19 @@ class PayActivity : AppCompatActivity() {
 
         receiptId = intent.getLongExtra(EXTRA_RECEIPT_ID, 0)
         val imageView = findViewById<ImageView>(R.id.payImageView)
-
-        receiptDrawer.observe(this) {
-            receiptBitmap.value = it.toBimap()
-        }
-;
-        receiptBitmap.observe(this) {
-            imageView.setImageBitmap(it)
-        }
-
+        payRemainder = findViewById(R.id.payRemainder)
         buttonPayCash = findViewById(R.id.payCash)
         buttonPayCard = findViewById(R.id.payCard)
         fabPrint = findViewById(R.id.fabPrint)
+
+        receiptHelper.observe(this) {
+            receiptBitmap.value = it.toBimap()
+            payRemainder.text = it.getRemainder().toString()
+        }
+        ;
+        receiptBitmap.observe(this) {
+            imageView.setImageBitmap(it)
+        }
 
         buttonPayCash.setOnClickListener {
             pay(PAY_TYPE_CASH)
@@ -125,19 +128,19 @@ class PayActivity : AppCompatActivity() {
         val localRepository = App.getInstance()?.getRepository()
         localRepository?.getReceipt(receiptId!!).let {
             it?.observe(this) { receipt ->
-                receiptDrawer.value = ReceiptDrawer(receipt)
+                receiptHelper.value = ReceiptHelper(receipt)
                 if (receipt != null) {
                     localRepository?.getPositions(receipt.id).let {
                         it?.observe(this) { positions ->
                             if (positions != null) {
-                                receiptDrawer.value = receiptDrawer.value?.copy(positions = positions)
+                                receiptHelper.value = receiptHelper.value?.copy(positions = positions)
                             }
                         }
                     }
                     localRepository?.getTransactions(receipt.id).let {
                         it?.observe(this) { transactions ->
                             if (transactions != null) {
-                                receiptDrawer.value = receiptDrawer.value?.copy(transactions = transactions)
+                                receiptHelper.value = receiptHelper.value?.copy(transactions = transactions)
                             }
                         }
                     }
@@ -153,18 +156,20 @@ class PayActivity : AppCompatActivity() {
 
     }
 
-    class PayCash : ActivityResultContract<Double, Double?>() {
+    class PayCash : ActivityResultContract<Double, Pair<Double, Double>?>() {
         override fun createIntent(context: Context, input: Double): Intent =
             Intent(context, PayCashActivity::class.java).apply {
                 action = "ru.ip_fateev.lavka.ACTION_PAY_CASH"
                 putExtra(PayCashActivity.EXTRA_AMOUNT, input)
             }
 
-        override fun parseResult(resultCode: Int, intent: Intent?): Double? {
+        override fun parseResult(resultCode: Int, intent: Intent?): Pair<Double, Double>? {
             if (resultCode != Activity.RESULT_OK) {
                 return null
             }
-            return intent?.getDoubleExtra(PayCashActivity.EXTRA_SUM, 0.0)
+            val a = intent?.getDoubleExtra(PayCashActivity.EXTRA_SUM, 0.0)
+            val b = intent?.getDoubleExtra(PayCashActivity.EXTRA_CHANGE, 0.0)
+            return Pair(a!!, b!!)
         }
     }
 
@@ -172,13 +177,28 @@ class PayActivity : AppCompatActivity() {
         if (it != null) {
             val localRepository = App.getInstance()?.getRepository()
 
-            val amount = (it * 100).toLong()
-            val transaction = Transaction(id = 0, docId = receiptId!!, type = TransactionType.CASH, amount = amount, rrn = "")
-            lifecycleScope.launch {
-                if (localRepository != null) {
-                    localRepository.insertTransaction(transaction)
+            val amount = it.first
+            val change = it.second
+
+            if (amount > 0) {
+                val transaction = Transaction(id = 0, docId = receiptId!!, type = TransactionType.CASH, amount = amount, rrn = "")
+                lifecycleScope.launch {
+                    if (localRepository != null) {
+                        localRepository.insertTransaction(transaction)
+                    }
                 }
             }
+
+            if (change > 0) {
+                val transaction = Transaction(id = 0, docId = receiptId!!, type = TransactionType.CASHCHAGE, amount = change, rrn = "")
+                lifecycleScope.launch {
+                    if (localRepository != null) {
+                        localRepository.insertTransaction(transaction)
+                    }
+                }
+            }
+
+            //TODO изменить статус чека
         }
     }
 

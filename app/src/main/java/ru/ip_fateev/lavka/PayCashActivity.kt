@@ -28,12 +28,15 @@ class PayCashActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_AMOUNT = "Amount"
         const val EXTRA_SUM = "Sum"
+        const val EXTRA_CHANGE = "Change"
     }
 
     lateinit var payCashAmount: TextView
     val payAmount: MutableLiveData<Double?> by lazy { MutableLiveData<Double?>(null) }
     lateinit var payCashSum: EditText
     val paySum: MutableLiveData<Double?> by lazy { MutableLiveData<Double?>(null) }
+    lateinit var payCashChange: TextView
+    val payChange: MutableLiveData<Double?> by lazy { MutableLiveData<Double?>(null) }
     lateinit var payCashCancel: Button
     lateinit var payCashDone: Button
     lateinit var payCashNoChange: Button
@@ -84,6 +87,9 @@ class PayCashActivity : AppCompatActivity() {
             }
 
         })
+
+        payCashChange = findViewById(R.id.payCashChange)
+        payChange.value = 0.0
 
         payCashCancel = findViewById(R.id.payCashCancel)
         payCashCancel.setOnClickListener {
@@ -136,6 +142,25 @@ class PayCashActivity : AppCompatActivity() {
                     {
                         payCashDone.isEnabled = false
                     }
+
+                    if (paySum.value!! > payAmount.value!!) {
+                        payChange.value = paySum.value!! - payAmount.value!!
+                    }
+                    else {
+                        payChange.value = 0.0
+                    }
+                }
+            }
+        }
+
+        payChange.observe(this) {
+            if (it != null) {
+                val v = payChange.value
+                if (v!! > 0.0) {
+                    payCashChange.text = v.toString()
+                }
+                else {
+                    payCashChange.text = "---"
                 }
             }
         }
@@ -143,7 +168,16 @@ class PayCashActivity : AppCompatActivity() {
 
     private fun payDone() {
         val intent = Intent()
-        intent.putExtra(EXTRA_SUM, paySum.value)
+
+        var sum = paySum.value!!
+        var change = 0.0
+        if (sum > payAmount.value!!) {
+            change = sum - payAmount.value!!
+            sum = payAmount.value!!
+        }
+
+        intent.putExtra(EXTRA_SUM, sum)
+        intent.putExtra(EXTRA_CHANGE, change)
         setResult(RESULT_OK, intent)
         finish()
     }

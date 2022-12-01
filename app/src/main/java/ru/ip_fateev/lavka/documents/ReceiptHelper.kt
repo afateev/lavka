@@ -2,7 +2,7 @@ package ru.ip_fateev.lavka.documents
 
 import android.graphics.*
 
-data class ReceiptDrawer(val receipt: Receipt? = null,
+data class ReceiptHelper(val receipt: Receipt? = null,
                          var positions: List<Position>? = null,
                          var transactions: List<Transaction>? = null,) {
     companion object {
@@ -15,14 +15,89 @@ data class ReceiptDrawer(val receipt: Receipt? = null,
         val ALIGN_RIGHT = 2
     }
 
-
-
     val paintText = Paint().apply {
         style = Paint.Style.FILL
         color = COLOR_TEXT
         isAntiAlias = false
         textSize = FONT_SIZE
         typeface = Typeface.MONOSPACE
+    }
+
+    fun getAmount(): Double {
+        var result = 0.0
+
+        if (positions != null) {
+            for (p in positions!!) {
+                val sum = p.price
+
+                result += sum
+            }
+        }
+
+        return result
+    }
+
+    fun getTotal(): Double {
+        var result = 0.0
+
+        result += getCashTotal()
+        result += getCardTotal()
+
+        return result
+    }
+
+    fun getCashTotal(): Double {
+        var result = 0.0
+        if (transactions != null) {
+            for (t in transactions!!) {
+                if (t.type == TransactionType.CASH) {
+                    if (t.amount > 0) {
+                        result += t.amount
+                    }
+                }
+            }
+        }
+
+        return result
+    }
+
+    fun getCashChangeTotal(): Double {
+        var result = 0.0
+        if (transactions != null) {
+            for (t in transactions!!) {
+                if (t.type == TransactionType.CASHCHAGE) {
+                    if (t.amount > 0) {
+                        result += t.amount
+                    }
+                }
+            }
+        }
+
+        return result
+    }
+
+    fun getCardTotal(): Double {
+        var result = 0.0
+        if (transactions != null) {
+            for (t in transactions!!) {
+                if (t.type == TransactionType.CARD) {
+                    if (t.amount > 0) {
+                        result += t.amount
+                    }
+                }
+            }
+        }
+
+        return result
+    }
+
+    fun getRemainder(): Double {
+        var result = 0.0
+
+        result += getAmount()
+        result -= getTotal()
+
+        return result
     }
 
     fun toStrings(limit: Int): List<String> {
@@ -44,13 +119,30 @@ data class ReceiptDrawer(val receipt: Receipt? = null,
             }
         }
 
-        if (transactions != null) {
-            for (t in transactions!!) {
-                var s1 = strF(10, t.type.toString())
-                var s2 = strF(limit - 10, (t.amount / 100).toString())
-                var s = s1 + s2
-                lines.add(s)
-            }
+        lines.add(strF(limit, "ОПЛАТА:"))
+
+        val cashTotal = getCashTotal()
+        if (cashTotal > 0) {
+            val s1 = strF(15, "НАЛИЧНЫМИ")
+            val s2 = strF(limit - 15, cashTotal.toString())
+            val s = " " + s1 + s2
+            lines.add(s)
+        }
+
+        val cashChangeTotal = getCashChangeTotal()
+        if (cashChangeTotal > 0) {
+            val s1 = strF(15, "СДАЧА")
+            val s2 = strF(limit - 15, cashChangeTotal.toString())
+            val s = " " + s1 + s2
+            lines.add(s)
+        }
+
+        val cardTotal = getCardTotal()
+        if (cardTotal > 0) {
+            val s1 = strF(15, "БЕЗНАЛИЧНЫМИ")
+            val s2 = strF(limit - 15, cardTotal.toString())
+            val s = " " + s1 + s2
+            lines.add(s)
         }
 
         return lines
