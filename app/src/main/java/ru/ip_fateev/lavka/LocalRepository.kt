@@ -9,9 +9,12 @@ class LocalRepository(
     private val positionDao: PositionDao,
     private val transactionDao: TransactionDao
 ) {
-    val newSellReceipt: LiveData<Receipt> = receiptDao.get(ReceiptType.SELL, ReceiptState.NEW).asLiveData()
+    fun getActiveSellReceipt(): LiveData<Receipt> { return receiptDao.getActiveOne(ReceiptType.SELL).asLiveData() }
+    fun getReceipt(id: Long): LiveData<Receipt> { return receiptDao.get(id).asLiveData() }
     suspend fun insertReceipt(receipt: Receipt){ receiptDao.insert(receipt) }
-    fun getReceipt(id: Long): LiveData<Receipt> {return receiptDao.get(id).asLiveData()}
+
+    fun getReceiptState(id: Long): LiveData<ReceiptState> { return receiptDao.getState(id).asLiveData() }
+    suspend fun setReceiptState(id: Long, state: ReceiptState) { receiptDao.setSate(id, state) }
 
     fun getPositions(docId: Long): LiveData<List<Position>> { return positionDao.get(docId).asLiveData() }
     suspend fun insertPosition(position: Position){ positionDao.insert(position) }

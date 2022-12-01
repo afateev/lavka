@@ -48,39 +48,25 @@ class ReceiptActivity : AppCompatActivity() {
         documents = LocalDatabase.instance(this)
 
         val localRepository = App.getInstance()?.getRepository()
-        val receiptLive = localRepository?.newSellReceipt
-        if (receiptLive != null) {
-            receiptLive.observe(this) {
-                receipt -> receipt.let {
-                    if (it == null) {
-                        val receipt = Receipt(id = 0, type = receiptType, state = ReceiptState.NEW)
-                        lifecycleScope.launch {
-                            if (localRepository != null) {
-                                localRepository.insertReceipt(receipt)
-                            }
-                        }
-                    } else {
-                        adapter.clear()
-                        receiptId = it.id
-                        val positionsLive = localRepository?.getPositions(it.id)
-                        if (positionsLive != null) {
-                            positionsLive.observe(this) {
-                                positions -> positions.let {
-                                    if (it != null) {
-                                        var pList = mutableListOf<Product>()
-                                        for (i in positions) {
-                                            val p = Product()
-                                            p.id = i.productId
-                                            p.name = i.productName
-                                            p.price = i.price
-                                            pList.add(p)
-                                        }
-                                        adapter.updateList(pList)
-                                    }
-                                }
-                            }
-                        }
+        localRepository?.getActiveSellReceipt()?.observe(this) {
+            if (it == null) {
+                val receipt = Receipt(id = 0, type = receiptType, state = ReceiptState.NEW)
+                lifecycleScope.launch {
+                    localRepository.insertReceipt(receipt)
+                }
+            } else {
+                adapter.clear()
+                receiptId = it.id
+                localRepository.getPositions(it.id).observe(this) { positions ->
+                    val pList = mutableListOf<Product>()
+                    for (i in positions) {
+                        val p = Product()
+                        p.id = i.productId
+                        p.name = i.productName
+                        p.price = i.price
+                        pList.add(p)
                     }
+                    adapter.updateList(pList)
                 }
             }
         }

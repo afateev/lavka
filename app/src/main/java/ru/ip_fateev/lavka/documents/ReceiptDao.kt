@@ -12,12 +12,18 @@ interface ReceiptDao {
     @Insert
     suspend fun insert(receipt: Receipt)
 
-    @Query("SELECT * FROM receipt WHERE type = :type AND state = :state ORDER BY id DESC LIMIT 1")
-    fun get(type: ReceiptType, state: ReceiptState): Flow<Receipt>
+    @Query("SELECT * FROM receipt WHERE type = :type AND state = :state ORDER BY id ASC LIMIT 1")
+    fun getOne(type: ReceiptType, state: ReceiptState): Flow<Receipt>
+
+    @Query("SELECT * FROM receipt WHERE type = :type AND state != :state ORDER BY id ASC LIMIT 1")
+    fun getActiveOne(type: ReceiptType, state: ReceiptState = ReceiptState.CLOSED): Flow<Receipt>
 
     @Query("SELECT * FROM receipt WHERE id = :id ORDER BY id DESC LIMIT 1")
     fun get(id: Long): Flow<Receipt>
 
+    @Query("SELECT state FROM receipt WHERE id = :id ORDER BY id DESC LIMIT 1")
+    fun getState(id: Long): Flow<ReceiptState>
+
     @Query("UPDATE receipt SET state = :state WHERE id = :id")
-    fun setSate(id: Long, state: ReceiptState)
+    suspend fun setSate(id: Long, state: ReceiptState)
 }

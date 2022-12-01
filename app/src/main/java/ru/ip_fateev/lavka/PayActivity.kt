@@ -1,6 +1,7 @@
 package ru.ip_fateev.lavka
 
 import android.app.Activity
+import android.app.ProgressDialog
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -26,11 +27,14 @@ import net.posprinter.utils.BitmapToByteData
 import net.posprinter.utils.DataForSendToPrinterPos80
 import net.posprinter.utils.PosPrinterDev
 import ru.ip_fateev.lavka.documents.ReceiptHelper
+import ru.ip_fateev.lavka.documents.ReceiptState
 import ru.ip_fateev.lavka.documents.Transaction
 import ru.ip_fateev.lavka.documents.TransactionType
+import kotlin.collections.ArrayList
 
 class PayActivity : AppCompatActivity() {
     var receiptId: Long? = null
+    lateinit var localRepository: LocalRepository
 
     companion object {
         const val EXTRA_RECEIPT_ID = "ReceiptId"
@@ -50,6 +54,7 @@ class PayActivity : AppCompatActivity() {
     lateinit var buttonPayCash: Button
     lateinit var buttonPayCard: Button
     lateinit var fabPrint: FloatingActionButton
+    lateinit var progressDialog: ProgressDialog
 
     //bindService connection
     var conn: ServiceConnection = object : ServiceConnection {
@@ -87,17 +92,33 @@ class PayActivity : AppCompatActivity() {
         setContentView(R.layout.activity_pay)
 
         receiptId = intent.getLongExtra(EXTRA_RECEIPT_ID, 0)
+
+        localRepository = App.getInstance()?.getRepository()!!
         val imageView = findViewById<ImageView>(R.id.payImageView)
         payRemainder = findViewById(R.id.payRemainder)
         buttonPayCash = findViewById(R.id.payCash)
         buttonPayCard = findViewById(R.id.payCard)
         fabPrint = findViewById(R.id.fabPrint)
+        progressDialog = ProgressDialog(this)
 
         receiptHelper.observe(this) {
             receiptBitmap.value = it.toBimap()
             payRemainder.text = it.getRemainder().toString()
+
+            if (it.getAmount() > 0) {
+                if (it.getRemainder().equals(0.0)) {
+                    when (it.getState() ) {
+                        ReceiptState.NEW -> {
+                            lifecycleScope.launch {
+                                localRepository.setReceiptState(receiptId!!, ReceiptState.PAID)
+                            }
+                        }
+                        else -> {}
+                    }
+                }
+            }
         }
-        ;
+
         receiptBitmap.observe(this) {
             imageView.setImageBitmap(it)
         }
@@ -124,36 +145,47 @@ class PayActivity : AppCompatActivity() {
         val intent = Intent(this, PosprinterService::class.java)
         bindService(intent, conn, BIND_AUTO_CREATE)
 
+        localRepository.getReceipt(receiptId!!).observe(this) { receipt ->
+            receiptHelper.value = ReceiptHelper(receipt)
+            if (receipt != null) {
+                localRepository.getPositions(receipt.id).let {
+                    it.observe(this) { positions ->
+                        if (positions != null) {
+                            receiptHelper.value = receiptHelper.value?.copy(positions = positions)
+                        }
+                    }
+                }
+                localRepository.getTransactions(receipt.id).let {
+                    it.observe(this) { transactions ->
+                        if (transactions != null) {
+                            receiptHelper.value = receiptHelper.value?.copy(transactions = transactions)
+                        }
+                    }
+                }
+            }
+        }
 
-        val localRepository = App.getInstance()?.getRepository()
-        localRepository?.getReceipt(receiptId!!).let {
-            it?.observe(this) { receipt ->
-                receiptHelper.value = ReceiptHelper(receipt)
-                if (receipt != null) {
-                    localRepository?.getPositions(receipt.id).let {
-                        it?.observe(this) { positions ->
-                            if (positions != null) {
-                                receiptHelper.value = receiptHelper.value?.copy(positions = positions)
-                            }
-                        }
-                    }
-                    localRepository?.getTransactions(receipt.id).let {
-                        it?.observe(this) { transactions ->
-                            if (transactions != null) {
-                                receiptHelper.value = receiptHelper.value?.copy(transactions = transactions)
-                            }
-                        }
-                    }
+        localRepository.getReceiptState(receiptId!!).observe(this) {
+            when(it) {
+                ReceiptState.PAID -> {
+                    progressDialog.setTitle("Сохранение чека")
+                    progressDialog.setMessage("Ожидание")
+                    progressDialog.setCancelable(false)
+                    progressDialog.show()
+                }
+                else -> {
+                    progressDialog.hide()
                 }
             }
         }
     }
 
     private fun pay(type: Int) {
-        if (type == PAY_TYPE_CASH) {
-            payCash.launch(100.0)
-        }
+        val amount = receiptHelper.value!!.getRemainder()
 
+        if (type == PAY_TYPE_CASH) {
+            payCash.launch(amount)
+        }
     }
 
     class PayCash : ActivityResultContract<Double, Pair<Double, Double>?>() {
@@ -175,30 +207,22 @@ class PayActivity : AppCompatActivity() {
 
     private val payCash = registerForActivityResult(PayCash()) {
         if (it != null) {
-            val localRepository = App.getInstance()?.getRepository()
-
             val amount = it.first
             val change = it.second
 
             if (amount > 0) {
                 val transaction = Transaction(id = 0, docId = receiptId!!, type = TransactionType.CASH, amount = amount, rrn = "")
                 lifecycleScope.launch {
-                    if (localRepository != null) {
-                        localRepository.insertTransaction(transaction)
-                    }
+                    localRepository.insertTransaction(transaction)
                 }
             }
 
             if (change > 0) {
                 val transaction = Transaction(id = 0, docId = receiptId!!, type = TransactionType.CASHCHAGE, amount = change, rrn = "")
                 lifecycleScope.launch {
-                    if (localRepository != null) {
-                        localRepository.insertTransaction(transaction)
-                    }
+                    localRepository.insertTransaction(transaction)
                 }
             }
-
-            //TODO изменить статус чека
         }
     }
 

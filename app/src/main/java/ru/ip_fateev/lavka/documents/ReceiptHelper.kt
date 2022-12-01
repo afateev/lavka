@@ -37,6 +37,14 @@ data class ReceiptHelper(val receipt: Receipt? = null,
         return result
     }
 
+    fun getState(): ReceiptState {
+        if (receipt != null) {
+            return receipt.state
+        }
+
+        return ReceiptState.NEW
+    }
+
     fun getTotal(): Double {
         var result = 0.0
 
