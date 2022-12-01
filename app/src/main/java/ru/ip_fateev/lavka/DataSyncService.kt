@@ -116,51 +116,63 @@ class DataSyncService : Service() {
             positions = positions
         )
 
-        val receiptResponse = cloudApi.postReceipt(receipt).execute()
+        try {
+            val receiptResponse = cloudApi.postReceipt(receipt).execute()
+            if (receiptResponse.isSuccessful() && receiptResponse.body() != null) {
+                val receipt = receiptResponse.body() as Receipt
+                if (receipt.result != null) {
+                    if (receipt.result){
 
-        val productListResponse = cloudApi.getProductList().execute()
-        Log.d(TAG, "productListResponse:\n ${productListResponse.body()}")
-        if (productListResponse.isSuccessful() && productListResponse.body() != null) {
-            val productList = productListResponse.body() as ProductList
-            if (productList.result && productList.id_list != null) {
-                val productIdList: MutableList<Long> = ArrayList()
-                val localProductList = inventory!!.productList
-                localProductList.forEach { productIdList += it.id }
-
-                // ЧТО ДОБАВИТЬ вычитаем из полученного списка, то что у нас есть
-                val forAdd: MutableList<Long> = ArrayList(productList.id_list)
-                forAdd.removeAll(productIdList)
-
-                // ЧТО УДАЛИТЬ вычитаем из нашего списка то, что получили
-                val forRemove: MutableList<Long> = ArrayList(productIdList)
-                forRemove.removeAll(productList.id_list!!)
-
-                // ЧТО СРАВНИТЬ вычитаем из списка, который получили, то что добавляем и то что удаляем
-                val forCompare: MutableList<Long> = ArrayList(productList.id_list)
-                forCompare.removeAll(forAdd)
-                forCompare.removeAll(forRemove)
-
-                // скачиваем себе, то что нужно добавить
-                Log.d(TAG, "For add: ${forAdd.size}")
-                forAdd.forEach {
-                    val productResponse = cloudApi.getProduct(it).execute()
-                    Log.d(TAG, "productResponse:\n ${productResponse.body()}")
-                    if (productResponse.isSuccessful() && productResponse.body() != null) {
-                        val product = productResponse.body() as ru.ip_fateev.lavka.cloud.model.Product
-                        if (product.result) {
-                                val newProduct = Product()
-                                newProduct.id = product.product_id!!
-                                newProduct.name = product.name
-                                newProduct.barcode = product.barcode
-                                newProduct.price = product.price
-                                inventory.InsertProduct(newProduct)
-                        }
                     }
                 }
-
-                Log.d(TAG, "For remove: ${forRemove.size}")
-                Log.d(TAG, "For compare: ${forCompare.size}")
             }
+
+            val productListResponse = cloudApi.getProductList().execute()
+            Log.d(TAG, "productListResponse:\n ${productListResponse.body()}")
+            if (productListResponse.isSuccessful() && productListResponse.body() != null) {
+                val productList = productListResponse.body() as ProductList
+                if (productList.result && productList.id_list != null) {
+                    val productIdList: MutableList<Long> = ArrayList()
+                    val localProductList = inventory!!.productList
+                    localProductList.forEach { productIdList += it.id }
+
+                    // ЧТО ДОБАВИТЬ вычитаем из полученного списка, то что у нас есть
+                    val forAdd: MutableList<Long> = ArrayList(productList.id_list)
+                    forAdd.removeAll(productIdList)
+
+                    // ЧТО УДАЛИТЬ вычитаем из нашего списка то, что получили
+                    val forRemove: MutableList<Long> = ArrayList(productIdList)
+                    forRemove.removeAll(productList.id_list!!)
+
+                    // ЧТО СРАВНИТЬ вычитаем из списка, который получили, то что добавляем и то что удаляем
+                    val forCompare: MutableList<Long> = ArrayList(productList.id_list)
+                    forCompare.removeAll(forAdd)
+                    forCompare.removeAll(forRemove)
+
+                    // скачиваем себе, то что нужно добавить
+                    Log.d(TAG, "For add: ${forAdd.size}")
+                    forAdd.forEach {
+                        val productResponse = cloudApi.getProduct(it).execute()
+                        Log.d(TAG, "productResponse:\n ${productResponse.body()}")
+                        if (productResponse.isSuccessful() && productResponse.body() != null) {
+                            val product = productResponse.body() as ru.ip_fateev.lavka.cloud.model.Product
+                            if (product.result) {
+                                    val newProduct = Product()
+                                    newProduct.id = product.product_id!!
+                                    newProduct.name = product.name
+                                    newProduct.barcode = product.barcode
+                                    newProduct.price = product.price
+                                    inventory.InsertProduct(newProduct)
+                            }
+                        }
+                    }
+
+                    Log.d(TAG, "For remove: ${forRemove.size}")
+                    Log.d(TAG, "For compare: ${forCompare.size}")
+                }
+            }
+        } catch (throwable: Throwable) {
+            Log.d(TAG, throwable.toString())
         }
 
         Log.d(TAG, "Sync complete")

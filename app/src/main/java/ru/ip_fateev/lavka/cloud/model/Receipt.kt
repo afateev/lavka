@@ -23,5 +23,5 @@ data class Receipt (
     var deviceUid: UUID? = null,
     var timestamp: Date? = null,
     var positions: List<Position>? = null,
-    val result: Boolean? = false
+    val result: Boolean? = null
     )
