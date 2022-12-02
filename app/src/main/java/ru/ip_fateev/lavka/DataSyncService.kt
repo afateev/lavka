@@ -1,15 +1,19 @@
 package ru.ip_fateev.lavka
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.MutableLiveData
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import ru.ip_fateev.lavka.App.Companion.getInstance
 import ru.ip_fateev.lavka.Inventory.Product
 import ru.ip_fateev.lavka.cloud.Api
@@ -20,18 +24,36 @@ import ru.ip_fateev.lavka.cloud.model.Receipt
 import ru.ip_fateev.lavka.cloud.model.ReceiptType
 import java.util.*
 
-class DataSyncService : Service() {
-    private val CHANNEL_ID = "DataSync Service"
+class DataSyncService : LifecycleService() {
+
+    enum class ServiceState(value: Int) {
+        STOPED(0),
+        RUN(1),
+        IDLE(2);
+
+        companion object {
+            private val VALUES = ServiceState.values()
+            fun getByValue(value: Int): ServiceState {
+                var res = VALUES.firstOrNull { it.ordinal == value }
+                if (res == null) {
+                    res = STOPED
+                }
+                return res
+            }
+        }
+    }
+
     private lateinit var notificationBuilder: NotificationCompat.Builder
     private val TAG = "DataSync Service"
 
     lateinit var cloudApi: Api
+    var state = MutableLiveData(ServiceState.STOPED)
     var syncRunning = false
+    var serviceRunning = false
 
     companion object {
-        fun startService(context: Context, message: String) {
+        fun startService(context: Context) {
             val startIntent = Intent(context, DataSyncService::class.java)
-            startIntent.putExtra("inputExtra", message)
             ContextCompat.startForegroundService(context, startIntent)
         }
 
@@ -42,47 +64,46 @@ class DataSyncService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
         cloudApi = Common.api
 
-        //do heavy work on a background thread
-        val input = intent?.getStringExtra("inputExtra")
-        createNotificationChannel(this)
-        val notificationIntent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            0, notificationIntent, 0
-        )
+        val pendingIntent = Intent(this, MainActivity::class.java).let { notificationIntent ->
+            PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
+        }
 
-        notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("DataSync Service Title")
-            .setContentText(input)
+        notificationBuilder = NotificationCompat.Builder(this, App.NOTIFICATION_CHANNEL_ID_STATE)
+            .setContentTitle("Связь с базой")
+            .setContentText("Подключение...")
             .setSmallIcon(R.drawable.ic_notification_sync)
             .setContentIntent(pendingIntent)
 
-        val notification = notificationBuilder.build()
-        startForeground(1, notification)
+
+        serviceRunning = true
+
+        startForeground(1, notificationBuilder.build())
+
+        state.observe(this) {
+            val notificationManager = ContextCompat.getSystemService(this@DataSyncService,
+                NotificationManager::class.java)  as NotificationManager
+
+            when(it) {
+                ServiceState.RUN -> {
+                    notificationBuilder.setContentText("Синхронизация")
+                }
+                else -> {
+                    notificationBuilder.setContentText("Ожидание")
+                }
+            }
+
+            notificationManager.notify(1, notificationBuilder.build())
+        }
+
+        //startSync()
 
         val timer = Timer()
+        //timer.scheduleAtFixedRate(timerTask, 0, 10000)
 
-        timer.scheduleAtFixedRate(timerTask, 0, 10000)
-        //stopSelf();
-        //stopForeground(true)
-        return START_NOT_STICKY
-    }
-
-    override fun onBind(p0: Intent?): IBinder? {
-        return null
-    }
-
-    private fun createNotificationChannel(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val serviceChannel = NotificationChannel(CHANNEL_ID, "DataSync Service Channel",
-                NotificationManager.IMPORTANCE_LOW)
-            serviceChannel.setSound(null, null)
-            serviceChannel.setShowBadge(false)
-            val manager = ContextCompat.getSystemService(context, NotificationManager::class.java)
-            manager!!.createNotificationChannel(serviceChannel)
-        }
+        return super.onStartCommand(intent, flags, startId)
     }
 
     private val timerTask: TimerTask = object : TimerTask() {
@@ -95,6 +116,18 @@ class DataSyncService : Service() {
                 doSync()
                 notificationBuilder.setContentText("Ожидание")
                 notificationManager.notify(1, notificationBuilder.build())
+            }
+        }
+    }
+
+    private fun startSync() {
+        CoroutineScope(Dispatchers.Main).launch {
+            state.value = ServiceState.IDLE
+            while(serviceRunning) {
+                state.value = ServiceState.RUN
+                delay(1000L)
+                state.value = ServiceState.IDLE
+                delay(1000L)
             }
         }
     }
