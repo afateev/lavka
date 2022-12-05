@@ -1,20 +1,17 @@
 package ru.ip_fateev.lavka
+
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import ru.ip_fateev.lavka.App.Companion.getInstance
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.*
+import ru.ip_fateev.lavka.Inventory.LocalData
 import ru.ip_fateev.lavka.Inventory.Product
 import ru.ip_fateev.lavka.cloud.Api
 import ru.ip_fateev.lavka.cloud.common.Common
@@ -22,14 +19,17 @@ import ru.ip_fateev.lavka.cloud.model.Position
 import ru.ip_fateev.lavka.cloud.model.ProductList
 import ru.ip_fateev.lavka.cloud.model.Receipt
 import ru.ip_fateev.lavka.cloud.model.ReceiptType
+import ru.ip_fateev.lavka.documents.ReceiptState
 import java.util.*
 
 class DataSyncService : LifecycleService() {
 
     enum class ServiceState(value: Int) {
         STOPED(0),
-        RUN(1),
-        IDLE(2);
+        IDLE(1),
+        SYNC_PRODUCTS(2),
+        PRODUCTS_DOWNLOAD(3),
+        SYNC_PAID_RECEIPT(4);
 
         companion object {
             private val VALUES = ServiceState.values()
@@ -47,11 +47,17 @@ class DataSyncService : LifecycleService() {
     private val TAG = "DataSync Service"
 
     lateinit var cloudApi: Api
+    lateinit var inventory: LocalData
+    lateinit var localRepository: LocalRepository
     var state = MutableLiveData(ServiceState.STOPED)
-    var syncRunning = false
+    var productListRequestTime = MutableLiveData(Calendar.getInstance().time)
+    var productListForAdd = MutableLiveData<List<Long>>(listOf())
+    lateinit var activeSellPaidReceipt: MutableLiveData<Long?>
     var serviceRunning = false
 
     companion object {
+        lateinit var service: DataSyncService
+
         fun startService(context: Context) {
             val startIntent = Intent(context, DataSyncService::class.java)
             ContextCompat.startForegroundService(context, startIntent)
@@ -61,11 +67,39 @@ class DataSyncService : LifecycleService() {
             val stopIntent = Intent(context, DataSyncService::class.java)
             context.stopService(stopIntent)
         }
+
+        fun instance(): DataSyncService {
+            return service
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+
+        cloudApi = Common.api
+        inventory = App.getInstance()?.getInventory()!!
+        localRepository = App.getInstance()?.getRepository()!!
+
+        activeSellPaidReceipt = MutableLiveData<Long?>(null)
+        localRepository.getActiveSellReceipt().observe(this) {
+            if (it != null) {
+                if (it.type == ru.ip_fateev.lavka.documents.ReceiptType.SELL && it.state == ReceiptState.PAID) {
+                    activeSellPaidReceipt.postValue(it.id)
+                }
+                else
+                {
+                    activeSellPaidReceipt.postValue(null)
+                }
+            }
+            else
+            {
+                activeSellPaidReceipt.postValue(null)
+            }
+        }
+        service = this
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
-        cloudApi = Common.api
 
         val pendingIntent = Intent(this, MainActivity::class.java).let { notificationIntent ->
             PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
@@ -86,87 +120,116 @@ class DataSyncService : LifecycleService() {
             val notificationManager = ContextCompat.getSystemService(this@DataSyncService,
                 NotificationManager::class.java)  as NotificationManager
 
+            var str = ""
+
             when(it) {
-                ServiceState.RUN -> {
-                    notificationBuilder.setContentText("Синхронизация")
+                ServiceState.SYNC_PRODUCTS -> {
+                    str += "Обновление списка продуктов"
+                }
+                ServiceState.PRODUCTS_DOWNLOAD -> {
+                    str += "Обновление продуктов"
+                }
+                ServiceState.SYNC_PAID_RECEIPT -> {
+                    str += "Отправка чека"
                 }
                 else -> {
-                    notificationBuilder.setContentText("Ожидание")
+                    str += "Ожидание"
                 }
             }
 
+            str += ", скачать: " + productListForAdd.value?.size.toString()
+
+            notificationBuilder.setContentText(str)
             notificationManager.notify(1, notificationBuilder.build())
         }
 
-        //startSync()
-
-        val timer = Timer()
-        //timer.scheduleAtFixedRate(timerTask, 0, 10000)
+        startSync()
 
         return super.onStartCommand(intent, flags, startId)
     }
 
-    private val timerTask: TimerTask = object : TimerTask() {
-        override fun run() {
-            if (!syncRunning) {
-                val notificationManager = ContextCompat.getSystemService(this@DataSyncService,
-                    NotificationManager::class.java)  as NotificationManager
-                notificationBuilder.setContentText("Синхронизация")
-                notificationManager.notify(1, notificationBuilder.build())
-                doSync()
-                notificationBuilder.setContentText("Ожидание")
-                notificationManager.notify(1, notificationBuilder.build())
-            }
-        }
-    }
-
     private fun startSync() {
-        CoroutineScope(Dispatchers.Main).launch {
-            state.value = ServiceState.IDLE
-            while(serviceRunning) {
-                state.value = ServiceState.RUN
-                delay(1000L)
-                state.value = ServiceState.IDLE
-                delay(1000L)
-            }
+        lifecycleScope.launch {
+            sync()
         }
     }
 
-    private fun doSync() {
-        syncRunning = true
-
-        Log.d(TAG, "Sync start")
-        val inventory = getInstance()!!.getInventory()
-
-        var positions: MutableList<Position> = mutableListOf();
-        positions.add(Position(productId = 0, productName = "test", price = 100.0, count = 1))
-
-        val receipt = Receipt(
-            id = UUID.randomUUID(),
-            type = ReceiptType.SELL,
-            deviceUid = null,
-            timestamp = Calendar.getInstance().time,
-            positions = positions
-        )
-
-        try {
-            val receiptResponse = cloudApi.postReceipt(receipt).execute()
-            if (receiptResponse.isSuccessful() && receiptResponse.body() != null) {
-                val receipt = receiptResponse.body() as Receipt
-                if (receipt.result != null) {
-                    if (receipt.result){
-
+    private suspend fun sync() {
+        state.value = ServiceState.IDLE
+        while(serviceRunning) {
+            when (state.value) {
+                ServiceState.IDLE -> {
+                    if (activeSellPaidReceipt.value != null) {
+                        state.value = ServiceState.SYNC_PAID_RECEIPT
+                    } else if ((Calendar.getInstance().time.time - productListRequestTime.value!!.time) > 10000) {
+                        state.value = ServiceState.SYNC_PRODUCTS
+                    } else if (productListForAdd.value?.size!! > 0) {
+                        state.value = ServiceState.PRODUCTS_DOWNLOAD
+                    }
+                    else
+                    {
+                        delay(1000L)
                     }
                 }
-            }
 
+                ServiceState.SYNC_PRODUCTS -> {
+                    withContext(Dispatchers.IO) {
+                        syncProductList()
+                    }
+                    productListRequestTime.value = Calendar.getInstance().time
+                    state.value = ServiceState.IDLE
+                }
+
+                ServiceState.PRODUCTS_DOWNLOAD -> {
+                    if (productListForAdd.value?.size!! > 0) {
+                        val list = productListForAdd.value!!.toMutableList()
+                        val id = list.first()
+                        withContext(Dispatchers.IO) {
+                            downloadProduct(id).let {
+                                if (it) {
+                                    list.remove(id)
+                                    productListForAdd.postValue(list.toList())
+                                }
+                            }
+                        }
+                    }
+                    state.value = ServiceState.IDLE
+                }
+
+                ServiceState.SYNC_PAID_RECEIPT -> {
+                    if (activeSellPaidReceipt.value != null) {
+                        val id = activeSellPaidReceipt.value!!
+                        withContext(Dispatchers.IO) {
+                            syncPayment(id).let {
+                                if (it) {
+                                    activeSellPaidReceipt.postValue(null)
+                                    localRepository.setReceiptState(id, ReceiptState.CLOSED)
+                                }
+                            }
+                        }
+                    }
+
+                    state.value = ServiceState.IDLE
+                }
+
+                else -> {
+                    delay(1000L)
+                }
+            }
+        }
+    }
+
+    private fun syncProductList() {
+        Log.d(TAG, "Sync products")
+
+        try {
             val productListResponse = cloudApi.getProductList().execute()
-            Log.d(TAG, "productListResponse:\n ${productListResponse.body()}")
+            //Log.d(TAG, "productListResponse:\n ${productListResponse.body()}")
             if (productListResponse.isSuccessful() && productListResponse.body() != null) {
                 val productList = productListResponse.body() as ProductList
                 if (productList.result && productList.id_list != null) {
                     val productIdList: MutableList<Long> = ArrayList()
-                    val localProductList = inventory!!.productList
+                    val localProductList = inventory.productList
                     localProductList.forEach { productIdList += it.id }
 
                     // ЧТО ДОБАВИТЬ вычитаем из полученного списка, то что у нас есть
@@ -182,24 +245,9 @@ class DataSyncService : LifecycleService() {
                     forCompare.removeAll(forAdd)
                     forCompare.removeAll(forRemove)
 
-                    // скачиваем себе, то что нужно добавить
-                    Log.d(TAG, "For add: ${forAdd.size}")
-                    forAdd.forEach {
-                        val productResponse = cloudApi.getProduct(it).execute()
-                        Log.d(TAG, "productResponse:\n ${productResponse.body()}")
-                        if (productResponse.isSuccessful() && productResponse.body() != null) {
-                            val product = productResponse.body() as ru.ip_fateev.lavka.cloud.model.Product
-                            if (product.result) {
-                                    val newProduct = Product()
-                                    newProduct.id = product.product_id!!
-                                    newProduct.name = product.name
-                                    newProduct.barcode = product.barcode
-                                    newProduct.price = product.price
-                                    inventory.InsertProduct(newProduct)
-                            }
-                        }
-                    }
+                    productListForAdd.postValue(forAdd)
 
+                    Log.d(TAG, "For add: ${forAdd.size}")
                     Log.d(TAG, "For remove: ${forRemove.size}")
                     Log.d(TAG, "For compare: ${forCompare.size}")
                 }
@@ -207,9 +255,74 @@ class DataSyncService : LifecycleService() {
         } catch (throwable: Throwable) {
             Log.d(TAG, throwable.toString())
         }
+    }
 
-        Log.d(TAG, "Sync complete")
+    private fun downloadProduct(id: Long): Boolean {
+        Log.d(TAG, "Download product: ${id}")
 
-        syncRunning = false
+        try {
+            val productResponse = cloudApi.getProduct(id).execute()
+            //Log.d(TAG, "productResponse:\n ${productResponse.body()}")
+            if (productResponse.isSuccessful() && productResponse.body() != null) {
+                val product = productResponse.body() as ru.ip_fateev.lavka.cloud.model.Product
+                if (product.result) {
+                    val newProduct = Product()
+                    newProduct.id = product.product_id!!
+                    newProduct.name = product.name
+                    newProduct.barcode = product.barcode
+                    newProduct.price = product.price
+                    inventory.InsertProduct(newProduct)
+                    return true
+                }
+            }
+        } catch (throwable: Throwable) {
+            Log.d(TAG, throwable.toString())
+        }
+
+        return false
+    }
+
+    private suspend fun syncPayment(id: Long): Boolean {
+        val r = localRepository.getReceipt(id)
+
+        if (r == null) {
+            return false
+        }
+
+        val posList = localRepository.getPositions(id)
+        var positions: MutableList<Position> = mutableListOf();
+
+        for (p in posList) {
+            positions.add(Position(productId = p.productId, productName = p.productName, price = p.price, count = 1))
+        }
+
+        val transactionsList = localRepository.getTransactions(id)
+
+
+        val receipt = Receipt(
+            id = r.uuid,
+            type = ReceiptType.SELL,
+            deviceUid = null,
+            timestamp = Calendar.getInstance().time,
+            positions = positions
+        )
+
+        try {
+            val receiptResponse = cloudApi.postReceipt(receipt).execute()
+            if (receiptResponse.isSuccessful() && receiptResponse.body() != null) {
+                val receipt = receiptResponse.body() as Receipt
+                if (receipt.result != null) {
+                    if (receipt.result){
+
+                    }
+                }
+
+                return true
+            }
+        } catch (throwable: Throwable) {
+            Log.d(TAG, throwable.toString())
+        }
+
+        return false
     }
 }

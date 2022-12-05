@@ -9,16 +9,19 @@ class LocalRepository(
     private val positionDao: PositionDao,
     private val transactionDao: TransactionDao
 ) {
-    fun getActiveSellReceipt(): LiveData<Receipt> { return receiptDao.getActiveOne(ReceiptType.SELL).asLiveData() }
-    fun getReceipt(id: Long): LiveData<Receipt> { return receiptDao.get(id).asLiveData() }
+    fun getActiveSellReceipt(): LiveData<Receipt> { return receiptDao.getActiveOneFlow(ReceiptType.SELL).asLiveData() }
+    fun getReceiptLive(id: Long): LiveData<Receipt> { return receiptDao.getFlow(id).asLiveData() }
+    suspend fun getReceipt(id: Long): Receipt { return receiptDao.get(id) }
     suspend fun insertReceipt(receipt: Receipt){ receiptDao.insert(receipt) }
 
     fun getReceiptState(id: Long): LiveData<ReceiptState> { return receiptDao.getState(id).asLiveData() }
     suspend fun setReceiptState(id: Long, state: ReceiptState) { receiptDao.setSate(id, state) }
 
-    fun getPositions(docId: Long): LiveData<List<Position>> { return positionDao.get(docId).asLiveData() }
+    fun getPositionsLive(docId: Long): LiveData<List<Position>> { return positionDao.getFlow(docId).asLiveData() }
+    suspend fun getPositions(docId: Long): List<Position> { return positionDao.get(docId) }
     suspend fun insertPosition(position: Position){ positionDao.insert(position) }
 
-    fun getTransactions(docId: Long): LiveData<List<Transaction>> { return transactionDao.get(docId).asLiveData() }
+    fun getTransactionsLive(docId: Long): LiveData<List<Transaction>> { return transactionDao.getFlow(docId).asLiveData() }
+    suspend fun getTransactions(docId: Long): List<Transaction> { return transactionDao.get(docId) }
     suspend fun insertTransaction(transaction: Transaction) { transactionDao.insert(transaction) }
 }

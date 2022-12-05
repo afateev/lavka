@@ -11,5 +11,8 @@ interface TransactionDao {
     suspend fun insert(transaction: Transaction)
 
     @Query("SELECT * FROM 'transaction' WHERE docId = :docId ORDER BY id ASC")
-    fun get(docId: Long): Flow<List<Transaction>>
+    fun getFlow(docId: Long): Flow<List<Transaction>>
+
+    @Query("SELECT * FROM 'transaction' WHERE docId = :docId ORDER BY id ASC")
+    suspend fun get(docId: Long): List<Transaction>
 }

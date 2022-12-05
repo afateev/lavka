@@ -145,17 +145,17 @@ class PayActivity : AppCompatActivity() {
         val intent = Intent(this, PosprinterService::class.java)
         bindService(intent, conn, BIND_AUTO_CREATE)
 
-        localRepository.getReceipt(receiptId!!).observe(this) { receipt ->
+        localRepository.getReceiptLive(receiptId!!).observe(this) { receipt ->
             receiptHelper.value = ReceiptHelper(receipt)
             if (receipt != null) {
-                localRepository.getPositions(receipt.id).let {
+                localRepository.getPositionsLive(receipt.id).let {
                     it.observe(this) { positions ->
                         if (positions != null) {
                             receiptHelper.value = receiptHelper.value?.copy(positions = positions)
                         }
                     }
                 }
-                localRepository.getTransactions(receipt.id).let {
+                localRepository.getTransactionsLive(receipt.id).let {
                     it.observe(this) { transactions ->
                         if (transactions != null) {
                             receiptHelper.value = receiptHelper.value?.copy(transactions = transactions)
@@ -167,14 +167,24 @@ class PayActivity : AppCompatActivity() {
 
         localRepository.getReceiptState(receiptId!!).observe(this) {
             when(it) {
+                ReceiptState.NEW -> {
+                    buttonPayCash.isEnabled = true
+                    buttonPayCard.isEnabled = true
+                }
                 ReceiptState.PAID -> {
                     progressDialog.setTitle("Сохранение чека")
                     progressDialog.setMessage("Ожидание")
                     progressDialog.setCancelable(false)
                     progressDialog.show()
+
+                    buttonPayCash.isEnabled = false
+                    buttonPayCard.isEnabled = false
                 }
                 else -> {
                     progressDialog.hide()
+
+                    buttonPayCash.isEnabled = false
+                    buttonPayCard.isEnabled = false
                 }
             }
         }

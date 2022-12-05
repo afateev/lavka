@@ -15,6 +15,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.launch
 import ru.ip_fateev.lavka.Inventory.Product
 import ru.ip_fateev.lavka.documents.*
+import java.util.*
 
 class ReceiptActivity : AppCompatActivity() {
     companion object {
@@ -50,14 +51,14 @@ class ReceiptActivity : AppCompatActivity() {
         val localRepository = App.getInstance()?.getRepository()
         localRepository?.getActiveSellReceipt()?.observe(this) {
             if (it == null) {
-                val receipt = Receipt(id = 0, type = receiptType, state = ReceiptState.NEW)
+                val receipt = Receipt(id = 0, uuid = UUID.randomUUID(), type = receiptType, state = ReceiptState.NEW)
                 lifecycleScope.launch {
                     localRepository.insertReceipt(receipt)
                 }
             } else {
                 adapter.clear()
                 receiptId = it.id
-                localRepository.getPositions(it.id).observe(this) { positions ->
+                localRepository.getPositionsLive(it.id).observe(this) { positions ->
                     val pList = mutableListOf<Product>()
                     for (i in positions) {
                         val p = Product()
@@ -92,7 +93,7 @@ class ReceiptActivity : AppCompatActivity() {
                 if (receiptId != null) {
                     val localRepository = App.getInstance()?.getRepository()
                     val i = adapter.itemCount
-                    val position = Position(0, docId = receiptId!!, number = i, productId = product.id, productName = product.name, price = product.price)
+                    val position = Position(0, docId = receiptId!!, number = i, productId = product.id, productName = product.name, price = product.price, quantity = 1.0)
                     lifecycleScope.launch {
                         localRepository?.insertPosition(position)
                     }

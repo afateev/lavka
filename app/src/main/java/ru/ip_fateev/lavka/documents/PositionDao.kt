@@ -11,5 +11,8 @@ interface PositionDao {
     suspend fun insert(position: Position)
 
     @Query("SELECT * FROM position WHERE docId = :docId ORDER BY number ASC")
-    fun get(docId: Long): Flow<List<Position>>
+    fun getFlow(docId: Long): Flow<List<Position>>
+
+    @Query("SELECT * FROM position WHERE docId = :docId ORDER BY number ASC")
+    suspend fun get(docId: Long): List<Position>
 }
