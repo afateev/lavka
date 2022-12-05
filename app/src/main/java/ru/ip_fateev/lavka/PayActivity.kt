@@ -190,6 +190,12 @@ class PayActivity : AppCompatActivity() {
         }
     }
 
+    override fun onDestroy() {
+        progressDialog.dismiss()
+
+        super.onDestroy()
+    }
+
     private fun pay(type: Int) {
         val amount = receiptHelper.value!!.getRemainder()
 
