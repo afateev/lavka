@@ -70,7 +70,7 @@ class InventoryActivity : AppCompatActivity() {
     }
 
     private fun onListItemClick(position: Int) {
-        val product = productsLive?.value?.get(position)
+        val product = adapter.productList.get(position)
 
         val intent = Intent()
         intent.putExtra("product", product)

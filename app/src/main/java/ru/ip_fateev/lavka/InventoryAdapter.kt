@@ -11,7 +11,7 @@ import ru.ip_fateev.lavka.Inventory.Product
 class InventoryAdapter internal constructor(context: Context?, private val onItemClicked: (position: Int) -> Unit) :
     RecyclerView.Adapter<InventoryAdapter.ViewHolder>() {
     private val inflater: LayoutInflater
-    private var productList: MutableList<Product> = ArrayList<Product>()
+    var productList: MutableList<Product> = ArrayList<Product>()
 
     init {
         inflater = LayoutInflater.from(context)
