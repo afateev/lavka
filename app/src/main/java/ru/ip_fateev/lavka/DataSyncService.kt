@@ -15,10 +15,7 @@ import ru.ip_fateev.lavka.Inventory.LocalData
 import ru.ip_fateev.lavka.Inventory.Product
 import ru.ip_fateev.lavka.cloud.Api
 import ru.ip_fateev.lavka.cloud.common.Common
-import ru.ip_fateev.lavka.cloud.model.Position
-import ru.ip_fateev.lavka.cloud.model.ProductList
-import ru.ip_fateev.lavka.cloud.model.Receipt
-import ru.ip_fateev.lavka.cloud.model.ReceiptType
+import ru.ip_fateev.lavka.cloud.model.*
 import ru.ip_fateev.lavka.documents.ReceiptState
 import java.util.*
 
@@ -290,21 +287,39 @@ class DataSyncService : LifecycleService() {
         }
 
         val posList = localRepository.getPositions(id)
-        var positions: MutableList<Position> = mutableListOf();
+        var positions: MutableList<Position> = mutableListOf()
 
         for (p in posList) {
-            positions.add(Position(productId = p.productId, productName = p.productName, price = p.price, count = 1))
+            positions.add(Position(productId = p.productId, productName = p.productName, price = p.price, quantity = 1))
         }
 
         val transactionsList = localRepository.getTransactions(id)
+        var transactions: MutableList<Transaction>  = mutableListOf()
 
+        for (t in transactionsList) {
+            val transactionType = when(t.type) {
+                ru.ip_fateev.lavka.documents.TransactionType.NONE -> TransactionType.NONE
+                ru.ip_fateev.lavka.documents.TransactionType.CASH -> TransactionType.CASH
+                ru.ip_fateev.lavka.documents.TransactionType.CASHCHANGE -> TransactionType.CASHCHANGE
+                ru.ip_fateev.lavka.documents.TransactionType.CARD -> TransactionType.CARD
+            }
+
+            transactions.add(Transaction(type = transactionType, amount = t.amount, rrn = t.rrn))
+        }
+
+
+        val receiptType = when(r.type) {
+            ru.ip_fateev.lavka.documents.ReceiptType.NONE -> ReceiptType.NONE
+            ru.ip_fateev.lavka.documents.ReceiptType.SELL -> ReceiptType.SELL
+        }
 
         val receipt = Receipt(
             id = r.uuid,
-            type = ReceiptType.SELL,
+            type = receiptType,
             deviceUid = null,
             timestamp = Calendar.getInstance().time,
-            positions = positions
+            positions = positions,
+            transactions = transactions
         )
 
         try {

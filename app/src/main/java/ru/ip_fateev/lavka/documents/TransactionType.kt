@@ -3,7 +3,7 @@ package ru.ip_fateev.lavka.documents
 enum class TransactionType(value: Int) {
     NONE(0),
     CASH(1),
-    CASHCHAGE(2),
+    CASHCHANGE(2),
     CARD(3);
 
     companion object {

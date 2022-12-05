@@ -73,7 +73,7 @@ data class ReceiptHelper(val receipt: Receipt? = null,
         var result = 0.0
         if (transactions != null) {
             for (t in transactions!!) {
-                if (t.type == TransactionType.CASHCHAGE) {
+                if (t.type == TransactionType.CASHCHANGE) {
                     if (t.amount > 0) {
                         result += t.amount
                     }

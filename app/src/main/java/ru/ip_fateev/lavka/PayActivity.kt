@@ -228,7 +228,7 @@ class PayActivity : AppCompatActivity() {
             }
 
             if (change > 0) {
-                val transaction = Transaction(id = 0, docId = receiptId!!, type = TransactionType.CASHCHAGE, amount = change, rrn = "")
+                val transaction = Transaction(id = 0, docId = receiptId!!, type = TransactionType.CASHCHANGE, amount = change, rrn = "")
                 lifecycleScope.launch {
                     localRepository.insertTransaction(transaction)
                 }
