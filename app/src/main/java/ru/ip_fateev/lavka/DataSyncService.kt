@@ -50,6 +50,8 @@ class DataSyncService : LifecycleService() {
     var productListRequestTime = MutableLiveData(Calendar.getInstance().time)
     var productListForAdd = MutableLiveData<List<Long>>(listOf())
     lateinit var activeSellPaidReceipt: MutableLiveData<Long?>
+    lateinit var activeSellDelayedReceipt: MutableLiveData<Long?>
+    var syncPaymentTime = MutableLiveData(Calendar.getInstance().time)
     var serviceRunning = false
 
     companion object {
@@ -81,6 +83,7 @@ class DataSyncService : LifecycleService() {
         localRepository.getActiveSellReceipt().observe(this) {
             if (it != null) {
                 if (it.type == ru.ip_fateev.lavka.documents.ReceiptType.SELL && it.state == ReceiptState.PAID) {
+                    syncPaymentTime = MutableLiveData(Calendar.getInstance().time)
                     activeSellPaidReceipt.postValue(it.id)
                 }
                 else
@@ -93,6 +96,24 @@ class DataSyncService : LifecycleService() {
                 activeSellPaidReceipt.postValue(null)
             }
         }
+
+        activeSellDelayedReceipt = MutableLiveData<Long?>(null)
+        localRepository.getOneReceiptLive(ru.ip_fateev.lavka.documents.ReceiptType.SELL, ReceiptState.DELAYED).observe(this) {
+            if (it != null) {
+                if (it.type == ru.ip_fateev.lavka.documents.ReceiptType.SELL && it.state == ReceiptState.DELAYED) {
+                    activeSellDelayedReceipt.postValue(it.id)
+                }
+                else
+                {
+                    activeSellDelayedReceipt.postValue(null)
+                }
+            }
+            else
+            {
+                activeSellDelayedReceipt.postValue(null)
+            }
+        }
+
         service = this
     }
 
@@ -158,6 +179,8 @@ class DataSyncService : LifecycleService() {
                 ServiceState.IDLE -> {
                     if (activeSellPaidReceipt.value != null) {
                         state.value = ServiceState.SYNC_PAID_RECEIPT
+                    } else if (activeSellDelayedReceipt.value != null) {
+                        state.value = ServiceState.SYNC_PAID_RECEIPT
                     } else if ((Calendar.getInstance().time.time - productListRequestTime.value!!.time) > 10000) {
                         state.value = ServiceState.SYNC_PRODUCTS
                     } else if (productListForAdd.value?.size!! > 0) {
@@ -196,10 +219,29 @@ class DataSyncService : LifecycleService() {
                 ServiceState.SYNC_PAID_RECEIPT -> {
                     if (activeSellPaidReceipt.value != null) {
                         val id = activeSellPaidReceipt.value!!
+
+                        if ((Calendar.getInstance().time.time - syncPaymentTime.value!!.time) > 5000) {
+                            activeSellPaidReceipt.postValue(null)
+                            localRepository.setReceiptState(id, ReceiptState.DELAYED)
+                        }
+                        else {
+
+                            withContext(Dispatchers.IO) {
+                                syncPayment(id).let {
+                                    if (it) {
+                                        activeSellPaidReceipt.postValue(null)
+                                        localRepository.setReceiptState(id, ReceiptState.CLOSED)
+                                    }
+                                }
+                            }
+                        }
+                    } else if (activeSellDelayedReceipt.value != null) {
+                        val id = activeSellDelayedReceipt.value!!
+
                         withContext(Dispatchers.IO) {
                             syncPayment(id).let {
                                 if (it) {
-                                    activeSellPaidReceipt.postValue(null)
+                                    activeSellDelayedReceipt.postValue(null)
                                     localRepository.setReceiptState(id, ReceiptState.CLOSED)
                                 }
                             }

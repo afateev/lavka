@@ -3,7 +3,8 @@ package ru.ip_fateev.lavka.documents
 enum class ReceiptState(value: Int) {
     NEW(0),
     PAID(1),
-    CLOSED(2);
+    DELAYED(2),
+    CLOSED(3);
 
 
 

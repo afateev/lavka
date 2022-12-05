@@ -13,13 +13,13 @@ interface ReceiptDao {
     suspend fun insert(receipt: Receipt)
 
     @Query("SELECT * FROM receipt WHERE type = :type AND state = :state ORDER BY id ASC LIMIT 1")
-    fun getOne(type: ReceiptType, state: ReceiptState): Flow<Receipt>
+    fun getOneFlow(type: ReceiptType, state: ReceiptState): Flow<Receipt>
 
-    @Query("SELECT * FROM receipt WHERE type = :type AND state != :state ORDER BY id ASC LIMIT 1")
-    fun getActiveOneFlow(type: ReceiptType, state: ReceiptState = ReceiptState.CLOSED): Flow<Receipt>
+    @Query("SELECT * FROM receipt WHERE type = :type AND state not in (:states) ORDER BY id ASC LIMIT 1")
+    fun getActiveOneFlow(type: ReceiptType, states: Array<ReceiptState> = arrayOf(ReceiptState.DELAYED, ReceiptState.CLOSED)): Flow<Receipt>
 
-    @Query("SELECT * FROM receipt WHERE type = :type AND state != :state ORDER BY id ASC LIMIT 1")
-    fun getActiveOne(type: ReceiptType, state: ReceiptState = ReceiptState.CLOSED): Receipt?
+    @Query("SELECT * FROM receipt WHERE type = :type AND state not in (:states) ORDER BY id ASC LIMIT 1")
+    fun getActiveOne(type: ReceiptType, states: Array<ReceiptState> = arrayOf(ReceiptState.DELAYED, ReceiptState.CLOSED)): Receipt?
 
     @Query("SELECT * FROM receipt WHERE id = :id ORDER BY id DESC LIMIT 1")
     fun getFlow(id: Long): Flow<Receipt>
