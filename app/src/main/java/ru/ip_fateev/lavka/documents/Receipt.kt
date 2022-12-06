@@ -2,7 +2,7 @@ package ru.ip_fateev.lavka.documents
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.util.UUID
+import java.util.*
 
 //https://developer.android.com/codelabs/android-room-with-a-view-kotlin#4
 
@@ -10,6 +10,7 @@ import java.util.UUID
 data class Receipt (
     @PrimaryKey(autoGenerate = true) val id: Long,
     val uuid: UUID,
+    val dateTime: Long,
     val type: ReceiptType,
-    val state: ReceiptState
-        )
+    val state: ReceiptState,
+)

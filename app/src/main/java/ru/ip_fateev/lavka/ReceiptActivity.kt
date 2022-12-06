@@ -17,6 +17,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.launch
 import ru.ip_fateev.lavka.Inventory.Product
 import ru.ip_fateev.lavka.documents.*
+import java.text.SimpleDateFormat
 import java.util.*
 
 class ReceiptActivity : AppCompatActivity() {
@@ -28,6 +29,7 @@ class ReceiptActivity : AppCompatActivity() {
 
     lateinit var receiptActivityReceiptInfo: TextView
     lateinit var receiptActivityReceiptEdit: ImageButton
+    lateinit var receiptActivityReceiptTotal: TextView
     lateinit var fabAdd: FloatingActionButton
     lateinit var receiptPay: Button
     lateinit var adapter: ReceiptAdapter
@@ -49,6 +51,7 @@ class ReceiptActivity : AppCompatActivity() {
 
         receiptActivityReceiptInfo = findViewById(R.id.receiptActivityReceiptInfo)
         receiptActivityReceiptEdit = findViewById(R.id.receiptActivityReceiptEdit)
+        receiptActivityReceiptTotal = findViewById(R.id.receiptActivityReceiptTotal)
 
         val recyclerView = findViewById<RecyclerView>(R.id.receipt_list)
         adapter = ReceiptAdapter(this)
@@ -59,7 +62,7 @@ class ReceiptActivity : AppCompatActivity() {
         val localRepository = App.getInstance()?.getRepository()
         localRepository?.getActiveSellReceipt()?.observe(this) {
             if (it == null) {
-                val receipt = Receipt(id = 0, uuid = UUID.randomUUID(), type = receiptType, state = ReceiptState.NEW)
+                val receipt = Receipt(id = 0, uuid = UUID.randomUUID(), dateTime = Calendar.getInstance().timeInMillis, type = receiptType, state = ReceiptState.NEW)
                 lifecycleScope.launch {
                     localRepository.insertReceipt(receipt)
                 }
@@ -67,19 +70,29 @@ class ReceiptActivity : AppCompatActivity() {
                 adapter.clear()
                 receiptId = it.id
 
-                receiptActivityReceiptInfo.text = "№" + it.id.toString()
+                val dateTime = Calendar.getInstance()
+                dateTime.timeInMillis = it.dateTime
+                val dateTimeStr = SimpleDateFormat("dd.MM.yyyy HH:mm").format(dateTime.time)
+                receiptActivityReceiptInfo.text = "№" + it.id.toString() + " от " + dateTimeStr
+
+
 
                 localRepository.getPositionsLive(it.id).observe(this) { positions ->
                     val pList = mutableListOf<Product>()
+                    var sum = 0.0
+
                     for (i in positions) {
                         val p = Product()
                         p.id = i.productId
                         p.name = i.productName
                         p.price = i.price
                         pList.add(p)
+
+                        sum += 1.0 * p.price
                     }
                     adapter.updateList(pList)
 
+                    receiptActivityReceiptTotal.text = sum.toString() + " Р"
                     receiptPay.isEnabled = positions.size > 0
                 }
             }
