@@ -85,7 +85,6 @@
                 android:layout_height="wrap_content"
                 android:layout_span="3"
                 android:layout_weight="1"
-                android:onClick="onClickPay"
                 android:text="Оплата" />
         </TableRow>
 

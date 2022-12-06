@@ -51,6 +51,11 @@ class ReceiptActivity : AppCompatActivity() {
 
         receiptActivityReceiptInfo = findViewById(R.id.receiptActivityReceiptInfo)
         receiptActivityReceiptEdit = findViewById(R.id.receiptActivityReceiptEdit)
+
+        receiptActivityReceiptEdit.setOnClickListener {
+            editReceipt.launch(receiptId)
+        }
+
         receiptActivityReceiptTotal = findViewById(R.id.receiptActivityReceiptTotal)
 
         val recyclerView = findViewById<RecyclerView>(R.id.receipt_list)
@@ -105,6 +110,9 @@ class ReceiptActivity : AppCompatActivity() {
         }
 
         receiptPay = findViewById(R.id.receiptPay)
+        receiptPay.setOnClickListener {
+            payReceipt.launch(receiptId)
+        }
     }
 
     fun RequestItem(){
@@ -154,7 +162,24 @@ class ReceiptActivity : AppCompatActivity() {
         }
     }
 
-    fun onClickPay(view: View) {
-        payReceipt.launch(receiptId)
+    class EditReceipt : ActivityResultContract<Long, Boolean?>() {
+        override fun createIntent(context: Context, input: Long): Intent =
+            Intent(context, ReceiptEditActivity::class.java).apply {
+                action = "ru.ip_fateev.lavka.ACTION_EDIT_RECEIPT"
+                putExtra(ReceiptEditActivity.EXTRA_RECEIPT_ID, input)
+            }
+
+        override fun parseResult(resultCode: Int, intent: Intent?): Boolean? {
+            if (resultCode != Activity.RESULT_OK) {
+                return null
+            }
+            return true
+        }
+    }
+
+    private val editReceipt = registerForActivityResult(EditReceipt()) {
+        if (it != null) {
+
+        }
     }
 }
