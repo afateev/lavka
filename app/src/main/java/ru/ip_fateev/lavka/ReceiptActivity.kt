@@ -6,6 +6,8 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,7 +26,10 @@ class ReceiptActivity : AppCompatActivity() {
         val RECEIPT_TYPE_SELL = ReceiptType.SELL.ordinal
     }
 
+    lateinit var receiptActivityReceiptInfo: TextView
+    lateinit var receiptActivityReceiptEdit: ImageButton
     lateinit var fabAdd: FloatingActionButton
+    lateinit var receiptPay: Button
     lateinit var adapter: ReceiptAdapter
     lateinit var documents: LocalDatabase
     var receiptType: ReceiptType = ReceiptType.NONE
@@ -42,6 +47,9 @@ class ReceiptActivity : AppCompatActivity() {
             ReceiptType.SELL -> viewReceiptType.text = "ПРОДАЖА"
         }
 
+        receiptActivityReceiptInfo = findViewById(R.id.receiptActivityReceiptInfo)
+        receiptActivityReceiptEdit = findViewById(R.id.receiptActivityReceiptEdit)
+
         val recyclerView = findViewById<RecyclerView>(R.id.receipt_list)
         adapter = ReceiptAdapter(this)
         recyclerView.adapter = adapter
@@ -58,6 +66,9 @@ class ReceiptActivity : AppCompatActivity() {
             } else {
                 adapter.clear()
                 receiptId = it.id
+
+                receiptActivityReceiptInfo.text = "№" + it.id.toString()
+
                 localRepository.getPositionsLive(it.id).observe(this) { positions ->
                     val pList = mutableListOf<Product>()
                     for (i in positions) {
@@ -68,6 +79,8 @@ class ReceiptActivity : AppCompatActivity() {
                         pList.add(p)
                     }
                     adapter.updateList(pList)
+
+                    receiptPay.isEnabled = positions.size > 0
                 }
             }
         }
@@ -77,6 +90,8 @@ class ReceiptActivity : AppCompatActivity() {
         fabAdd.setOnClickListener{
             RequestItem()
         }
+
+        receiptPay = findViewById(R.id.receiptPay)
     }
 
     fun RequestItem(){

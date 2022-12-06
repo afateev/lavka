@@ -6,54 +6,70 @@
     android:layout_height="match_parent"
     tools:context=".ReceiptActivity">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TableLayout
+        android:layout_width="fill_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <TextView
-            android:id="@+id/receiptActivityReceiptType"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Неизвестный тип чека" />
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_height="match_parent">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/receiptActivityReceiptType"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:text="ОПЕРАЦИЯ" />
+
+            <TextView
+                android:id="@+id/receiptActivityReceiptInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="0" />
+
+            <ImageButton
+                android:id="@+id/receiptActivityReceiptEdit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:srcCompat="@android:drawable/ic_menu_edit" />
+        </TableRow>
+
+        <TableRow
+            android:layout_width="fill_parent"
             android:layout_height="match_parent"
-            android:layout_weight="0.1">
+            android:layout_weight="1">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/receipt_list"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:layout_span="3"
+                android:layout_weight="1"
                 android:scrollbars="vertical"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                tools:layout_editor_absoluteX="411dp"
-                tools:layout_editor_absoluteY="1dp" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+        </TableRow>
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="1">
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_height="match_parent">
 
             <Button
                 android:id="@+id/receiptPay"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_span="3"
+                android:layout_weight="1"
                 android:onClick="onClickPay"
-                android:text="Оплата"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                android:text="Оплата" />
+        </TableRow>
 
-    </LinearLayout>
+    </TableLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAdd"
