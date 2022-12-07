@@ -37,7 +37,8 @@
                 android:id="@+id/receiptActivityReceiptEdit"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:srcCompat="@android:drawable/ic_menu_edit" />
+                android:background="@color/white"
+                app:srcCompat="@drawable/receipt_edit" />
         </TableRow>
 
         <TableRow

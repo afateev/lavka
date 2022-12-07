@@ -17,6 +17,7 @@ class LocalRepository(
 
     fun getReceiptState(id: Long): LiveData<ReceiptState> { return receiptDao.getState(id).asLiveData() }
     suspend fun setReceiptState(id: Long, state: ReceiptState) { receiptDao.setSate(id, state) }
+    suspend fun setReceiptDateTime(id: Long, dateTime: Long) { receiptDao.setDateTime(id, dateTime) }
 
     fun getPositionsLive(docId: Long): LiveData<List<Position>> { return positionDao.getFlow(docId).asLiveData() }
     suspend fun getPositions(docId: Long): List<Position> { return positionDao.get(docId) }
