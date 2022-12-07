@@ -165,6 +165,56 @@
                     android:layout_weight="1"
                     android:text="Применить" />
             </TableRow>
+
+            <TableRow
+                android:layout_width="fill_parent"
+                android:layout_height="match_parent" >
+
+                <TextView
+                    android:id="@+id/textView9"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Тип" />
+
+                <ImageButton
+                    android:id="@+id/imageButton2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@color/white"
+                    app:srcCompat="@drawable/ic_square" />
+
+                <TextView
+                    android:id="@+id/receiptEditType"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="TextView" />
+            </TableRow>
+
+            <TableRow
+                android:layout_width="fill_parent"
+                android:layout_height="match_parent" >
+
+                <TextView
+                    android:id="@+id/textView11"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Стутус" />
+
+                <ImageButton
+                    android:id="@+id/imageButton3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@color/white"
+                    app:srcCompat="@drawable/ic_square" />
+
+                <TextView
+                    android:id="@+id/receiptEditState"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="TextView" />
+            </TableRow>
         </TableLayout>
     </ScrollView>
 

@@ -27,6 +27,8 @@ class ReceiptEditActivity : AppCompatActivity() {
     lateinit var receiptEditTime: TextView
     lateinit var receiptEditTimePicker: TimePicker
     lateinit var receiptEditTimeApply: Button
+    lateinit var receiptEditType: TextView
+    lateinit var receiptEditState: TextView
 
 
     var receiptId: Long = -1
@@ -47,6 +49,8 @@ class ReceiptEditActivity : AppCompatActivity() {
         receiptEditTime = findViewById(R.id.receiptEditTime)
         receiptEditTimePicker = findViewById(R.id.receiptEditTimePicker)
         receiptEditTimeApply = findViewById(R.id.receiptEditTimeApply)
+        receiptEditType = findViewById(R.id.receiptEditType)
+        receiptEditState = findViewById(R.id.receiptEditState)
 
         receiptId = intent.getLongExtra(PayActivity.EXTRA_RECEIPT_ID, 0)
         localRepository = App.getInstance()?.getRepository()!!
@@ -58,6 +62,8 @@ class ReceiptEditActivity : AppCompatActivity() {
             receiptEditUuid.text = it.uuid.toString()
             receiptEditDate.text = SimpleDateFormat("dd.MM.yyyy").format(it.dateTime)
             receiptEditTime.text = SimpleDateFormat("HH:mm").format(it.dateTime)
+            receiptEditType.text = it.type.toString()
+            receiptEditState.text = it.state.toString()
         }
 
         receiptEditDatePicker.isVisible = false
