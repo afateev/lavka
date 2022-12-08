@@ -1,4 +1,4 @@
-package ru.ip_fateev.lavka.documents
+package ru.ip_fateev.lavka.data
 
 enum class ReceiptState(value: Int) {
     NEW(0),

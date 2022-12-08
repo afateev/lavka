@@ -16,7 +16,7 @@ import ru.ip_fateev.lavka.Inventory.Product
 import ru.ip_fateev.lavka.cloud.Api
 import ru.ip_fateev.lavka.cloud.common.Common
 import ru.ip_fateev.lavka.cloud.model.*
-import ru.ip_fateev.lavka.documents.ReceiptState
+import ru.ip_fateev.lavka.data.ReceiptState
 import java.util.*
 
 class DataSyncService : LifecycleService() {
@@ -76,13 +76,13 @@ class DataSyncService : LifecycleService() {
         super.onCreate()
 
         cloudApi = Common.api
-        inventory = App.getInstance()?.getInventory()!!
-        localRepository = App.getInstance()?.getRepository()!!
+        inventory = App.getInstance().getInventory()!!
+        localRepository = App.getInstance().getRepository()
 
         activeSellPaidReceipt = MutableLiveData<Long?>(null)
         localRepository.getActiveSellReceipt().observe(this) {
             if (it != null) {
-                if (it.type == ru.ip_fateev.lavka.documents.ReceiptType.SELL && it.state == ReceiptState.PAID) {
+                if (it.type == ru.ip_fateev.lavka.data.ReceiptType.SELL && it.state == ReceiptState.PAID) {
                     syncPaymentTime = MutableLiveData(Calendar.getInstance().time)
                     activeSellPaidReceipt.postValue(it.id)
                 }
@@ -98,9 +98,9 @@ class DataSyncService : LifecycleService() {
         }
 
         activeSellDelayedReceipt = MutableLiveData<Long?>(null)
-        localRepository.getOneReceiptLive(ru.ip_fateev.lavka.documents.ReceiptType.SELL, ReceiptState.DELAYED).observe(this) {
+        localRepository.getOneReceiptLive(ru.ip_fateev.lavka.data.ReceiptType.SELL, ReceiptState.DELAYED).observe(this) {
             if (it != null) {
-                if (it.type == ru.ip_fateev.lavka.documents.ReceiptType.SELL && it.state == ReceiptState.DELAYED) {
+                if (it.type == ru.ip_fateev.lavka.data.ReceiptType.SELL && it.state == ReceiptState.DELAYED) {
                     activeSellDelayedReceipt.postValue(it.id)
                 }
                 else
@@ -340,10 +340,10 @@ class DataSyncService : LifecycleService() {
 
         for (t in transactionsList) {
             val transactionType = when(t.type) {
-                ru.ip_fateev.lavka.documents.TransactionType.NONE -> TransactionType.NONE
-                ru.ip_fateev.lavka.documents.TransactionType.CASH -> TransactionType.CASH
-                ru.ip_fateev.lavka.documents.TransactionType.CASHCHANGE -> TransactionType.CASHCHANGE
-                ru.ip_fateev.lavka.documents.TransactionType.CARD -> TransactionType.CARD
+                ru.ip_fateev.lavka.data.TransactionType.NONE -> TransactionType.NONE
+                ru.ip_fateev.lavka.data.TransactionType.CASH -> TransactionType.CASH
+                ru.ip_fateev.lavka.data.TransactionType.CASHCHANGE -> TransactionType.CASHCHANGE
+                ru.ip_fateev.lavka.data.TransactionType.CARD -> TransactionType.CARD
             }
 
             transactions.add(Transaction(type = transactionType, amount = t.amount, rrn = t.rrn))
@@ -351,8 +351,8 @@ class DataSyncService : LifecycleService() {
 
 
         val receiptType = when(r.type) {
-            ru.ip_fateev.lavka.documents.ReceiptType.NONE -> ReceiptType.NONE
-            ru.ip_fateev.lavka.documents.ReceiptType.SELL -> ReceiptType.SELL
+            ru.ip_fateev.lavka.data.ReceiptType.NONE -> ReceiptType.NONE
+            ru.ip_fateev.lavka.data.ReceiptType.SELL -> ReceiptType.SELL
         }
 
         val receipt = Receipt(

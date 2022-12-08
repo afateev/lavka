@@ -1,4 +1,4 @@
-package ru.ip_fateev.lavka.documents
+package ru.ip_fateev.lavka.data
 
 import androidx.room.Dao
 import androidx.room.Insert

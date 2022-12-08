@@ -7,7 +7,7 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
-import ru.ip_fateev.lavka.documents.Receipt
+import ru.ip_fateev.lavka.data.Receipt
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -53,9 +53,9 @@ class ReceiptEditActivity : AppCompatActivity() {
         receiptEditState = findViewById(R.id.receiptEditState)
 
         receiptId = intent.getLongExtra(PayActivity.EXTRA_RECEIPT_ID, 0)
-        localRepository = App.getInstance()?.getRepository()!!
+        localRepository = App.getInstance().getRepository()
 
-        receipt = localRepository.getReceiptLive(receiptId!!)
+        receipt = localRepository.getReceiptLive(receiptId)
 
         receipt.observe(this) {
             receiptEditId.text = it.id.toString()

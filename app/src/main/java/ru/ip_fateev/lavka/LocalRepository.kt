@@ -2,12 +2,13 @@ package ru.ip_fateev.lavka
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.asLiveData
-import ru.ip_fateev.lavka.documents.*
+import ru.ip_fateev.lavka.data.*
 
 class LocalRepository(
     private val receiptDao: ReceiptDao,
     private val positionDao: PositionDao,
-    private val transactionDao: TransactionDao
+    private val transactionDao: TransactionDao,
+    private val placeDao: PlaceDao
 ) {
     fun getActiveSellReceipt(): LiveData<Receipt> { return receiptDao.getActiveOneFlow(ReceiptType.SELL).asLiveData() }
     fun getReceiptLive(id: Long): LiveData<Receipt> { return receiptDao.getFlow(id).asLiveData() }
@@ -26,4 +27,8 @@ class LocalRepository(
     fun getTransactionsLive(docId: Long): LiveData<List<Transaction>> { return transactionDao.getFlow(docId).asLiveData() }
     suspend fun getTransactions(docId: Long): List<Transaction> { return transactionDao.get(docId) }
     suspend fun insertTransaction(transaction: Transaction) { transactionDao.insert(transaction) }
+
+    fun getPlacesLive(): LiveData<List<Place>> { return placeDao.getFlow().asLiveData() }
+    suspend fun getPlaces(): List<Place> { return placeDao.get() }
+    suspend fun insertPlace(place: Place) { placeDao.insert(place) }
 }

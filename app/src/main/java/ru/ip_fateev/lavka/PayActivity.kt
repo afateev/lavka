@@ -26,10 +26,10 @@ import net.posprinter.service.PosprinterService
 import net.posprinter.utils.BitmapToByteData
 import net.posprinter.utils.DataForSendToPrinterPos80
 import net.posprinter.utils.PosPrinterDev
-import ru.ip_fateev.lavka.documents.ReceiptHelper
-import ru.ip_fateev.lavka.documents.ReceiptState
-import ru.ip_fateev.lavka.documents.Transaction
-import ru.ip_fateev.lavka.documents.TransactionType
+import ru.ip_fateev.lavka.data.ReceiptHelper
+import ru.ip_fateev.lavka.data.ReceiptState
+import ru.ip_fateev.lavka.data.Transaction
+import ru.ip_fateev.lavka.data.TransactionType
 import kotlin.collections.ArrayList
 
 class PayActivity : AppCompatActivity() {
@@ -93,7 +93,7 @@ class PayActivity : AppCompatActivity() {
 
         receiptId = intent.getLongExtra(EXTRA_RECEIPT_ID, 0)
 
-        localRepository = App.getInstance()?.getRepository()!!
+        localRepository = App.getInstance().getRepository()
         val imageView = findViewById<ImageView>(R.id.payImageView)
         payRemainder = findViewById(R.id.payRemainder)
         buttonPayCash = findViewById(R.id.payCash)

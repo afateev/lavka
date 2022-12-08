@@ -1,12 +1,14 @@
-package ru.ip_fateev.lavka.documents
+package ru.ip_fateev.lavka.data
 
-enum class ReceiptType(value: Int) {
+enum class TransactionType(value: Int) {
     NONE(0),
-    SELL(1);
+    CASH(1),
+    CASHCHANGE(2),
+    CARD(3);
 
     companion object {
         private val VALUES = values()
-        fun getByValue(value: Int): ReceiptType {
+        fun getByValue(value: Int): TransactionType {
             var res = VALUES.firstOrNull { it.ordinal == value }
             if (res == null) {
                 res = NONE

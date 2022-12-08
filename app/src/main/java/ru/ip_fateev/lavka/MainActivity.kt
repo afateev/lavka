@@ -199,6 +199,17 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        App.getInstance().place.observe(this) {
+            if (supportActionBar != null) {
+                if (it != null) {
+                    supportActionBar?.title = it.name
+                }
+                else {
+                    supportActionBar?.title = "lavka"
+                }
+            }
+        }
+
         //инициализация upos native
         val arrayMap: ArrayMap<Settings, String> = ArrayMap<Settings, String>()
         val absolutePath: String = applicationContext.getFilesDir().getAbsolutePath()

@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.View
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
@@ -16,7 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.launch
 import ru.ip_fateev.lavka.Inventory.Product
-import ru.ip_fateev.lavka.documents.*
+import ru.ip_fateev.lavka.data.*
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -64,8 +63,8 @@ class ReceiptActivity : AppCompatActivity() {
 
         documents = LocalDatabase.instance(this)
 
-        val localRepository = App.getInstance()?.getRepository()
-        localRepository?.getActiveSellReceipt()?.observe(this) {
+        val localRepository = App.getInstance().getRepository()
+        localRepository.getActiveSellReceipt().observe(this) {
             if (it == null) {
                 val receipt = Receipt(id = 0, uuid = UUID.randomUUID(), dateTime = Calendar.getInstance().timeInMillis, type = receiptType, state = ReceiptState.NEW)
                 lifecycleScope.launch {
@@ -127,11 +126,11 @@ class ReceiptActivity : AppCompatActivity() {
             if (it.resultCode == Activity.RESULT_OK) {
                 val product = it.data?.getSerializableExtra("product") as Product
                 if (receiptId != null) {
-                    val localRepository = App.getInstance()?.getRepository()
+                    val localRepository = App.getInstance().getRepository()
                     val i = adapter.itemCount
                     val position = Position(0, docId = receiptId!!, number = i, productId = product.id, productName = product.name, price = product.price, quantity = 1.0)
                     lifecycleScope.launch {
-                        localRepository?.insertPosition(position)
+                        localRepository.insertPosition(position)
                     }
                 }
                 //adapter.AddProduct(product)
