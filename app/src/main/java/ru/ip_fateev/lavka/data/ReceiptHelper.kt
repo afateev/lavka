@@ -153,6 +153,13 @@ data class ReceiptHelper(val receipt: Receipt? = null,
             lines.add(s)
         }
 
+        if (receipt != null) {
+            lines.add(strF(limit, ""))
+            lines.add(strF(limit, "ОРГАНИЗАЦИЯ", ALIGN_CENTER))
+            lines.add(strF(limit, receipt.place.toString(), ALIGN_CENTER))
+            lines.add(strF(limit, "Кассир: " + receipt.user.toString()))
+        }
+
         return lines
     }
 
