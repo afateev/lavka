@@ -109,7 +109,11 @@ class PayActivity : AppCompatActivity() {
                 if (it.getRemainder().equals(0.0)) {
                     when (it.getState() ) {
                         ReceiptState.NEW -> {
+                            val place = App.getPlace().value?.id
+                            val user = App.getUser().value?.id
+
                             lifecycleScope.launch {
+                                localRepository.setReceiptPlaceAndUser(receiptId!!, place!!, user!!)
                                 localRepository.setReceiptState(receiptId!!, ReceiptState.PAID)
                             }
                         }

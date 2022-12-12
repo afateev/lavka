@@ -13,4 +13,6 @@ data class Receipt (
     val dateTime: Long,
     val type: ReceiptType,
     val state: ReceiptState,
+    val place: Long,
+    val user: Long,
 )

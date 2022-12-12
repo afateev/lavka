@@ -35,4 +35,10 @@ interface ReceiptDao {
 
     @Query("UPDATE receipt SET dateTime = :dateTime WHERE id = :id")
     suspend fun setDateTime(id: Long, dateTime: Long)
+
+    @Query("UPDATE receipt SET place = :place WHERE id = :id")
+    suspend fun setPlace(id: Long, place: Long)
+
+    @Query("UPDATE receipt SET user = :user WHERE id = :id")
+    suspend fun setUser(id: Long, user: Long)
 }

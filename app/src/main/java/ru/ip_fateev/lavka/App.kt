@@ -6,15 +6,12 @@ import android.app.NotificationManager
 import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import ru.ip_fateev.lavka.Inventory.LocalData
 import ru.ip_fateev.lavka.data.LocalDatabase
 import ru.ip_fateev.lavka.data.Place
-import kotlin.coroutines.CoroutineContext
+import ru.ip_fateev.lavka.data.User
 
 class App : Application() {
     companion object {
@@ -29,12 +26,17 @@ class App : Application() {
         fun getPlace(): MutableLiveData<Place?> {
             return instance?.place!!
         }
+
+        fun getUser(): MutableLiveData<User?> {
+            return instance?.user!!
+        }
     }
 
     private var inventory: LocalData? = null
     lateinit var database: LocalDatabase
     lateinit var localRepository: LocalRepository
     var place = MutableLiveData<Place?>(null)
+    var user = MutableLiveData<User?>(null)
 
     override fun onCreate() {
         super.onCreate()
@@ -63,6 +65,13 @@ class App : Application() {
             val p = findPlace("Администрация", it)
             if (p != null) {
                 place.postValue(p)
+            }
+        }
+
+        localRepository.getUsersLive().observeForever {
+            val v = findUser(0, it)
+            if (v != null) {
+                user.postValue(v)
             }
         }
 
@@ -105,6 +114,15 @@ class App : Application() {
         places.forEach { p ->
             if (p.name == name) {
                 return p
+            }
+        }
+        return null
+    }
+
+    private fun findUser(id: Long, users: List<User>): User? {
+        users.forEach { v ->
+            if (v.id == id) {
+                return v
             }
         }
         return null

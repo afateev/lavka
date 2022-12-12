@@ -66,7 +66,15 @@ class ReceiptActivity : AppCompatActivity() {
         val localRepository = App.getInstance().getRepository()
         localRepository.getActiveSellReceipt().observe(this) {
             if (it == null) {
-                val receipt = Receipt(id = 0, uuid = UUID.randomUUID(), dateTime = Calendar.getInstance().timeInMillis, type = receiptType, state = ReceiptState.NEW)
+                val receipt = Receipt(
+                    id = 0,
+                    uuid = UUID.randomUUID(),
+                    dateTime = Calendar.getInstance().timeInMillis,
+                    type = receiptType,
+                    state = ReceiptState.NEW,
+                    place = -1,
+                    user = -1
+                )
                 lifecycleScope.launch {
                     localRepository.insertReceipt(receipt)
                 }

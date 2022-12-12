@@ -216,6 +216,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        App.getInstance().user.observe(this) {
+            if (supportActionBar != null) {
+                var user = "user"
+                if (it != null) {
+                    user = it.name
+                }
+
+                val actionBarUser = supportActionBar?.customView?.findViewById<TextView>(R.id.actionBarUser)
+                actionBarUser?.text = user
+            }
+        }
+
         //инициализация upos native
         val arrayMap: ArrayMap<Settings, String> = ArrayMap<Settings, String>()
         val absolutePath: String = applicationContext.getFilesDir().getAbsolutePath()
