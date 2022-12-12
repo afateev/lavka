@@ -9,7 +9,9 @@ import android.os.IBinder
 import android.util.ArrayMap
 import android.util.Log
 import android.view.View
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContract
+import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import ru.evotor.devices.drivers.IPaySystemDriverService
 import ru.evotor.devices.drivers.IUsbDriverManagerService
@@ -199,14 +201,18 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        supportActionBar?.displayOptions = ActionBar.DISPLAY_SHOW_CUSTOM
+        supportActionBar?.setCustomView(R.layout.action_bar)
+
         App.getInstance().place.observe(this) {
             if (supportActionBar != null) {
+                var place = "lavka"
                 if (it != null) {
-                    supportActionBar?.title = it.name
+                    place = it.name
                 }
-                else {
-                    supportActionBar?.title = "lavka"
-                }
+
+                val actionBarPlace = supportActionBar?.customView?.findViewById<TextView>(R.id.actionBarPlace)
+                actionBarPlace?.text = place
             }
         }
 
