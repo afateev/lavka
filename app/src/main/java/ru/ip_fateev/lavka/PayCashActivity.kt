@@ -173,7 +173,6 @@ class PayCashActivity : AppCompatActivity() {
         var change = 0.0
         if (sum > payAmount.value!!) {
             change = sum - payAmount.value!!
-            sum = payAmount.value!!
         }
 
         intent.putExtra(EXTRA_SUM, sum)
