@@ -5,12 +5,13 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Receipt::class, Position::class, Transaction::class, Place::class], version = 1)
+@Database(entities = [Receipt::class, Position::class, Transaction::class, Place::class, User::class], version = 1)
 public abstract class LocalDatabase : RoomDatabase() {
     abstract fun receiptDao(): ReceiptDao
     abstract fun positionDao(): PositionDao
     abstract fun transactionDao(): TransactionDao
     abstract fun placeDao(): PlaceDao
+    abstract fun userDao(): UserDao
 
     companion object {
         @Volatile

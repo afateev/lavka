@@ -51,7 +51,13 @@ class App : Application() {
         instance = this
         inventory = LocalData(applicationContext, "data_test1")
         database = LocalDatabase.instance(this)
-        localRepository = LocalRepository(database.receiptDao(), database.positionDao(), database.transactionDao(), database.placeDao())
+        localRepository = LocalRepository(
+            database.receiptDao(),
+            database.positionDao(),
+            database.transactionDao(),
+            database.placeDao(),
+            database.userDao()
+        )
 
         localRepository.getPlacesLive().observeForever {
             val p = findPlace("Администрация", it)

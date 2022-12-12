@@ -195,6 +195,7 @@ class DataSyncService : LifecycleService() {
                 ServiceState.SYNC_PRODUCTS -> {
                     withContext(Dispatchers.IO) {
                         syncProductList()
+                        syncUserList()
                     }
                     productListRequestTime.value = Calendar.getInstance().time
                     state.value = ServiceState.IDLE
@@ -319,6 +320,55 @@ class DataSyncService : LifecycleService() {
         }
 
         return false
+    }
+
+    suspend private fun syncUserList() {
+        Log.d(TAG, "Sync users")
+
+        try {
+            val userListResponse = cloudApi.getUserList().execute()
+            Log.d(TAG, "userListResponse:\n ${userListResponse.body()}")
+            if (userListResponse.isSuccessful() && userListResponse.body() != null) {
+                val userList = userListResponse.body() as UserList
+                if (userList.result && userList.user_list != null) {
+                    val localList = localRepository.getUsers()
+                    Log.d(TAG, "Users local: ${localList}")
+
+                    for (u in userList.user_list!!) {
+                        if (u.id != null && u.name != null) {
+
+                            var found: ru.ip_fateev.lavka.data.User? = null
+
+                            for (l in localList) {
+                                if (l.id == u.id) {
+                                    found = l
+                                    break
+                                }
+                            }
+
+                            val user = ru.ip_fateev.lavka.data.User(id = u.id!!, name = u.name!!)
+
+                            if (found == null) {
+                                Log.d(TAG, "User add: ${user}")
+                                localRepository.insertUser(user)
+                            } else {
+                                if (found.name != u.name) {
+                                    Log.d(TAG, "User update: ${user}")
+                                    localRepository.updateUser(user)
+                                }
+                            }
+                        }
+                    }
+
+
+                    /*Log.d(TAG, "For add: ${forAdd.size}")
+                    Log.d(TAG, "For remove: ${forRemove.size}")
+                    Log.d(TAG, "For compare: ${forCompare.size}")*/
+                }
+            }
+        } catch (throwable: Throwable) {
+            Log.d(TAG, throwable.toString())
+        }
     }
 
     private suspend fun syncPayment(id: Long): Boolean {

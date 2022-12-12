@@ -8,7 +8,8 @@ class LocalRepository(
     private val receiptDao: ReceiptDao,
     private val positionDao: PositionDao,
     private val transactionDao: TransactionDao,
-    private val placeDao: PlaceDao
+    private val placeDao: PlaceDao,
+    private val userDao: UserDao
 ) {
     fun getActiveSellReceipt(): LiveData<Receipt> { return receiptDao.getActiveOneFlow(ReceiptType.SELL).asLiveData() }
     fun getReceiptLive(id: Long): LiveData<Receipt> { return receiptDao.getFlow(id).asLiveData() }
@@ -31,4 +32,9 @@ class LocalRepository(
     fun getPlacesLive(): LiveData<List<Place>> { return placeDao.getFlow().asLiveData() }
     suspend fun getPlaces(): List<Place> { return placeDao.get() }
     suspend fun insertPlace(place: Place) { placeDao.insert(place) }
+
+    fun getUsersLive(): LiveData<List<User>> { return userDao.getFlow().asLiveData() }
+    suspend fun getUsers(): List<User> { return userDao.get() }
+    suspend fun insertUser(user: User) { userDao.insert(user) }
+    suspend fun updateUser(user: User) { userDao.update(user) }
 }
