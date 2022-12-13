@@ -12,6 +12,7 @@ import ru.ip_fateev.lavka.Inventory.LocalData
 import ru.ip_fateev.lavka.data.LocalDatabase
 import ru.ip_fateev.lavka.data.Place
 import ru.ip_fateev.lavka.data.User
+import java.util.*
 
 class App : Application() {
     companion object {
@@ -30,8 +31,13 @@ class App : Application() {
         fun getUser(): MutableLiveData<User?> {
             return instance?.user!!
         }
+
+        fun getDevId(): UUID? {
+            return getInstance().deviceUuidFactory.getDeviceUuid()
+        }
     }
 
+    lateinit var deviceUuidFactory: DeviceUuidFactory
     private var inventory: LocalData? = null
     lateinit var database: LocalDatabase
     lateinit var localRepository: LocalRepository
@@ -40,6 +46,8 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        deviceUuidFactory = DeviceUuidFactory(this)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val serviceChannel = NotificationChannel(NOTIFICATION_CHANNEL_ID_STATE, "Уведомления о состоянии",

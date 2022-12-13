@@ -503,11 +503,14 @@ class DataSyncService : LifecycleService() {
             ru.ip_fateev.lavka.data.ReceiptType.SELL -> ReceiptType.SELL
         }
 
+        val t = Calendar.getInstance()
+        t.timeInMillis = r.dateTime
+
         val receipt = Receipt(
             uuid = r.uuid,
             type = receiptType,
-            deviceUid = null,
-            timestamp = Calendar.getInstance().time,
+            deviceUid = App.getDevId(),
+            timestamp = t.time,
             positions = positions,
             transactions = transactions
         )
