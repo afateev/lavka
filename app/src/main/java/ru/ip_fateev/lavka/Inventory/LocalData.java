@@ -36,6 +36,10 @@ public class LocalData {
         db.productDao().insert(val);
     }
 
+    public void UpdateProduct(Product val) {
+        db.productDao().update(val);
+    }
+
     public LiveData<List<Product>> getProductListLive(LifecycleOwner activity, Observer<List<Product>> observer){
         LiveData<List<Product>> products = db.productDao().getAllLive();
         products.observe(activity, observer);

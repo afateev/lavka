@@ -11,6 +11,12 @@ interface Api {
     @GET("product/list")
     fun getProductList(): Call<ProductList>
 
+    @GET("product/list/array")
+    fun getProductList(@Query("id") ids: List<Long>): Call<ProductList>
+
+    @GET("product/list/all")
+    fun getProductListAll(): Call<ProductList>
+
     @GET("product/{product_id}")
     fun getProduct(@Path("product_id") id: Long): Call<Product>
 

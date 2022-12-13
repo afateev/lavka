@@ -204,12 +204,31 @@ class DataSyncService : LifecycleService() {
                 ServiceState.PRODUCTS_DOWNLOAD -> {
                     if (productListForAdd.value?.size!! > 0) {
                         val list = productListForAdd.value!!.toMutableList()
-                        val id = list.first()
-                        withContext(Dispatchers.IO) {
-                            downloadProduct(id).let {
-                                if (it) {
-                                    list.remove(id)
-                                    productListForAdd.postValue(list.toList())
+
+                        var maxCount = 10
+                        // если список на добавлние большой, проще спросить все разом
+                        if (list.size > maxCount * 2) {
+                            withContext(Dispatchers.IO) {
+                                downloadProductsAll().let {
+                                    if (it) {
+                                        list.clear()
+                                        productListForAdd.postValue(list.toList())
+                                    }
+                                }
+                            }
+                        }
+                        // если список на добавлние небольшой, докачиваем помаленьку
+                        else {
+                            if (maxCount > list.size) {
+                                maxCount = list.size
+                            }
+                            var ids = list.subList(0, maxCount)
+                            withContext(Dispatchers.IO) {
+                                downloadProducts(ids).let {
+                                    if (it) {
+                                        list.removeAll(ids)
+                                        productListForAdd.postValue(list.toList())
+                                    }
                                 }
                             }
                         }
@@ -297,6 +316,42 @@ class DataSyncService : LifecycleService() {
         }
     }
 
+    private fun insertOrUpdateProduct(product: ru.ip_fateev.lavka.cloud.model.Product) {
+        if (product.product_id == null) {
+            return
+        }
+
+        if (product.name == null) {
+            return
+        }
+
+        if (product.barcode == null) {
+            return
+        }
+
+        if (product.price == null) {
+            return
+        }
+        val newProduct = Product(
+            id = product.product_id!!,
+            name = product.name!!,
+            barcode = product.barcode!!,
+            price = product.price!!
+        )
+
+        val localProductList = inventory.productList
+        for (p in localProductList) {
+            if (p.id == newProduct.id) {
+                if (p != newProduct) {
+                    inventory.UpdateProduct(newProduct)
+                }
+                return
+            }
+        }
+
+        inventory.InsertProduct(newProduct)
+    }
+
     private fun downloadProduct(id: Long): Boolean {
         Log.d(TAG, "Download product: ${id}")
 
@@ -306,13 +361,56 @@ class DataSyncService : LifecycleService() {
             if (productResponse.isSuccessful() && productResponse.body() != null) {
                 val product = productResponse.body() as ru.ip_fateev.lavka.cloud.model.Product
                 if (product.result) {
-                    val newProduct = Product()
-                    newProduct.id = product.product_id!!
-                    newProduct.name = product.name
-                    newProduct.barcode = product.barcode
-                    newProduct.price = product.price
-                    inventory.InsertProduct(newProduct)
+                    insertOrUpdateProduct(product)
                     return true
+                }
+            }
+        } catch (throwable: Throwable) {
+            Log.d(TAG, throwable.toString())
+        }
+
+        return false
+    }
+
+    private fun downloadProducts(ids: List<Long>): Boolean {
+        Log.d(TAG, "Download product: $ids")
+
+        try {
+            val productListResponse = cloudApi.getProductList(ids).execute()
+            //Log.d(TAG, "productResponse:\n ${productResponse.body()}")
+            if (productListResponse.isSuccessful() && productListResponse.body() != null) {
+                val productList = productListResponse.body() as ProductList
+                if (productList.result) {
+                    if (productList.product_list != null) {
+                        for (product in productList.product_list!!) {
+                            insertOrUpdateProduct(product)
+                        }
+                        return true
+                    }
+                }
+            }
+        } catch (throwable: Throwable) {
+            Log.d(TAG, throwable.toString())
+        }
+
+        return false
+    }
+
+    private fun downloadProductsAll(): Boolean {
+        Log.d(TAG, "Download product all")
+
+        try {
+            val productListResponse = cloudApi.getProductListAll().execute()
+            //Log.d(TAG, "productResponse:\n ${productResponse.body()}")
+            if (productListResponse.isSuccessful() && productListResponse.body() != null) {
+                val productList = productListResponse.body() as ProductList
+                if (productList.result) {
+                    if (productList.product_list != null) {
+                        for (product in productList.product_list!!) {
+                            insertOrUpdateProduct(product)
+                        }
+                        return true
+                    }
                 }
             }
         } catch (throwable: Throwable) {

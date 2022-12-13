@@ -94,10 +94,12 @@ class ReceiptActivity : AppCompatActivity() {
                     var sum = 0.0
 
                     for (i in positions) {
-                        val p = Product()
-                        p.id = i.productId
-                        p.name = i.productName
-                        p.price = i.price
+                        val p = Product(
+                            id = i.productId,
+                            name = i.productName,
+                            price = i.price,
+                            barcode = ""
+                        )
                         pList.add(p)
 
                         sum += 1.0 * p.price

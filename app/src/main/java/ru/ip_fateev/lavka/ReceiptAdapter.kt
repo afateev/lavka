@@ -24,9 +24,9 @@ class ReceiptAdapter internal constructor(context: Context?) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val product: Product = productList[position]
-        holder.id.setText(product.getId())
+        holder.id.setText(product.id.toString())
         holder.name.setText(product.name)
-        holder.price.setText(product.getPrice())
+        holder.price.setText(product.price.toString())
     }
 
     override fun getItemCount(): Int {
