@@ -29,17 +29,27 @@ enum class TransactionType(value: Int) {
 }
 
 data class Transaction (
-    val type: TransactionType,
-    val amount: Double,
-    val rrn: String,
+    val type: TransactionType? = null,
+    val amount: Double? = null,
+    val rrn: String? = null,
+)
+
+data class OfdData (
+    var t: Long? = null,    // время в формате ГГГГММДДTММСС
+    var s: Double? = null,  // сумма
+    var fn: Long? = null,   // номер фискального накопителя
+    var i: Long? = null,    // номер фискального документа
+    var fp: Long? = null,   // фискальный признак
+    var n: Long? = null,    // операция 1 - приход, 2 - возврат прихода
 )
 
 data class Receipt (
-    var id: UUID? = null,
+    var uuid: UUID? = null,
     var type: ReceiptType? = null,
     var deviceUid: UUID? = null,
     var timestamp: Date? = null,
     var positions: List<Position>? = null,
     var transactions: List<Transaction>? = null,
+    var ofdData: OfdData? = null,
     val result: Boolean? = null
     )

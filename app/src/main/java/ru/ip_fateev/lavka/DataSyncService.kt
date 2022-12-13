@@ -504,7 +504,7 @@ class DataSyncService : LifecycleService() {
         }
 
         val receipt = Receipt(
-            id = r.uuid,
+            uuid = r.uuid,
             type = receiptType,
             deviceUid = null,
             timestamp = Calendar.getInstance().time,
@@ -518,11 +518,10 @@ class DataSyncService : LifecycleService() {
                 val receipt = receiptResponse.body() as Receipt
                 if (receipt.result != null) {
                     if (receipt.result){
-
+                        Log.d(TAG, "Receipt " + receipt.uuid + " pushed")
+                        return true
                     }
                 }
-
-                return true
             }
         } catch (throwable: Throwable) {
             Log.d(TAG, throwable.toString())
