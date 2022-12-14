@@ -15,6 +15,7 @@ import ru.ip_fateev.lavka.cloud.Api
 import ru.ip_fateev.lavka.cloud.common.Common
 import ru.ip_fateev.lavka.cloud.model.*
 import ru.ip_fateev.lavka.data.ReceiptState
+import java.text.SimpleDateFormat
 import java.util.*
 
 class DataSyncService : LifecycleService() {
@@ -506,7 +507,7 @@ class DataSyncService : LifecycleService() {
             uuid = r.uuid,
             type = receiptType,
             deviceUid = App.getDevId(),
-            timestamp = t.time,
+            timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(t.time),
             positions = positions,
             transactions = transactions
         )

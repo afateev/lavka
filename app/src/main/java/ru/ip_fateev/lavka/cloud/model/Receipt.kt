@@ -22,7 +22,7 @@ enum class TransactionType(value: Int) {
     NONE(0),
     @SerializedName("cash")
     CASH(1),
-    @SerializedName("cashcange")
+    @SerializedName("cashchange")
     CASHCHANGE(2),
     @SerializedName("card")
     CARD(3);
@@ -47,7 +47,7 @@ data class Receipt (
     var uuid: UUID? = null,
     var type: ReceiptType? = null,
     var deviceUid: UUID? = null,
-    var timestamp: Date? = null,
+    var timestamp: String? = null,
     var positions: List<Position>? = null,
     var transactions: List<Transaction>? = null,
     var ofdData: OfdData? = null,

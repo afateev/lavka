@@ -63,6 +63,11 @@ data class ReceiptHelper(val receipt: Receipt? = null,
                         result += t.amount
                     }
                 }
+                if (t.type == TransactionType.CASHCHANGE) {
+                    if (t.amount > 0) {
+                        result -= t.amount
+                    }
+                }
             }
         }
 
