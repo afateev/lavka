@@ -6,16 +6,16 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.recyclerview.widget.RecyclerView
 import me.xdrop.fuzzywuzzy.FuzzySearch
-import ru.ip_fateev.lavka.Inventory.Product
+import ru.ip_fateev.lavka.data.Product
 
 class InventoryActivity : AppCompatActivity() {
-    private lateinit var productsLive: LiveData<List<Product>>
     private lateinit var findInput: EditText
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: InventoryAdapter
+    private var productsAll: MutableLiveData<List<Product>> = MutableLiveData(arrayListOf())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,18 +32,22 @@ class InventoryActivity : AppCompatActivity() {
             }
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                productsLive.value?.let { updateList(it) }
+                productsAll.value?.let { updateList(it) }
             }
         })
 
         adapter = InventoryAdapter(this){ position -> onListItemClick(position) }
         recyclerView.adapter = adapter
 
-        val app = application as? App
-        productsLive = app?.getInventory()!!
-            .getProductListLive(
-                this
-            ) { products -> updateList(products) }
+        productsAll.observe(this) {
+            updateList(it)
+        }
+
+        App.getInstance().localRepository.getProductsLive().observe(this) {
+            productsAll.postValue(it)
+        }
+
+
     }
 
     private fun updateList(products: List<Product>) {

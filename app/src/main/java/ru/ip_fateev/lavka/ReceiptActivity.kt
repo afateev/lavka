@@ -14,7 +14,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.launch
-import ru.ip_fateev.lavka.Inventory.Product
 import ru.ip_fateev.lavka.data.*
 import java.text.SimpleDateFormat
 import java.util.*

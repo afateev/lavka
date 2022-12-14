@@ -11,8 +11,6 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.*
-import ru.ip_fateev.lavka.Inventory.LocalData
-import ru.ip_fateev.lavka.Inventory.Product
 import ru.ip_fateev.lavka.cloud.Api
 import ru.ip_fateev.lavka.cloud.common.Common
 import ru.ip_fateev.lavka.cloud.model.*
@@ -44,7 +42,6 @@ class DataSyncService : LifecycleService() {
     private val TAG = "DataSync Service"
 
     lateinit var cloudApi: Api
-    lateinit var inventory: LocalData
     lateinit var localRepository: LocalRepository
     var state = MutableLiveData(ServiceState.STOPED)
     var productListRequestTime = MutableLiveData(Calendar.getInstance().time)
@@ -76,7 +73,6 @@ class DataSyncService : LifecycleService() {
         super.onCreate()
 
         cloudApi = Common.api
-        inventory = App.getInstance().getInventory()!!
         localRepository = App.getInstance().getRepository()
 
         activeSellPaidReceipt = MutableLiveData<Long?>(null)
@@ -278,7 +274,7 @@ class DataSyncService : LifecycleService() {
         }
     }
 
-    private fun syncProductList() {
+    private suspend fun syncProductList() {
         Log.d(TAG, "Sync products")
 
         try {
@@ -288,7 +284,7 @@ class DataSyncService : LifecycleService() {
                 val productList = productListResponse.body() as ProductList
                 if (productList.result && productList.id_list != null) {
                     val productIdList: MutableList<Long> = ArrayList()
-                    val localProductList = inventory.productList
+                    val localProductList = localRepository.getProducts()
                     localProductList.forEach { productIdList += it.id }
 
                     // ЧТО ДОБАВИТЬ вычитаем из полученного списка, то что у нас есть
@@ -316,7 +312,7 @@ class DataSyncService : LifecycleService() {
         }
     }
 
-    private fun insertOrUpdateProduct(product: ru.ip_fateev.lavka.cloud.model.Product) {
+    private suspend fun insertOrUpdateProduct(product: ru.ip_fateev.lavka.cloud.model.Product) {
         if (product.product_id == null) {
             return
         }
@@ -332,27 +328,27 @@ class DataSyncService : LifecycleService() {
         if (product.price == null) {
             return
         }
-        val newProduct = Product(
+        val newProduct = ru.ip_fateev.lavka.data.Product(
             id = product.product_id!!,
             name = product.name!!,
             barcode = product.barcode!!,
             price = product.price!!
         )
 
-        val localProductList = inventory.productList
+        val localProductList = localRepository.getProducts()
         for (p in localProductList) {
             if (p.id == newProduct.id) {
                 if (p != newProduct) {
-                    inventory.UpdateProduct(newProduct)
+                    localRepository.updateProduct(newProduct)
                 }
                 return
             }
         }
 
-        inventory.InsertProduct(newProduct)
+        localRepository.insertProduct(newProduct)
     }
 
-    private fun downloadProduct(id: Long): Boolean {
+    private suspend fun downloadProduct(id: Long): Boolean {
         Log.d(TAG, "Download product: ${id}")
 
         try {
@@ -372,7 +368,7 @@ class DataSyncService : LifecycleService() {
         return false
     }
 
-    private fun downloadProducts(ids: List<Long>): Boolean {
+    private suspend fun downloadProducts(ids: List<Long>): Boolean {
         Log.d(TAG, "Download product: $ids")
 
         try {
@@ -396,7 +392,7 @@ class DataSyncService : LifecycleService() {
         return false
     }
 
-    private fun downloadProductsAll(): Boolean {
+    private suspend fun downloadProductsAll(): Boolean {
         Log.d(TAG, "Download product all")
 
         try {
@@ -420,7 +416,7 @@ class DataSyncService : LifecycleService() {
         return false
     }
 
-    suspend private fun syncUserList() {
+    private suspend fun syncUserList() {
         Log.d(TAG, "Sync users")
 
         try {

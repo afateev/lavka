@@ -6,12 +6,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import ru.ip_fateev.lavka.Inventory.Product
+import ru.ip_fateev.lavka.data.Product
 
 class ReceiptAdapter internal constructor(context: Context?) :
     RecyclerView.Adapter<ReceiptAdapter.ViewHolder>() {
     private val inflater: LayoutInflater
-    private var productList: MutableList<Product> = ArrayList<Product>()
+    private var productList: MutableList<Product> = arrayListOf()
 
     init {
         inflater = LayoutInflater.from(context)
@@ -37,9 +37,9 @@ class ReceiptAdapter internal constructor(context: Context?) :
         return productList.toList()
     }
 
-    fun updateList(products: MutableList<Product>) {
+    fun updateList(products: List<Product>) {
         productList.clear()
-        productList = products
+        productList.addAll(products)
         notifyDataSetChanged()
     }
 

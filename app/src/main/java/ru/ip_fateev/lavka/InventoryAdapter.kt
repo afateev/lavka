@@ -6,12 +6,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import ru.ip_fateev.lavka.Inventory.Product
+import ru.ip_fateev.lavka.data.Product
 
 class InventoryAdapter internal constructor(context: Context?, private val onItemClicked: (position: Int) -> Unit) :
     RecyclerView.Adapter<InventoryAdapter.ViewHolder>() {
     private val inflater: LayoutInflater
-    var productList: MutableList<Product> = ArrayList<Product>()
+    var productList: MutableList<Product> = arrayListOf()
 
     init {
         inflater = LayoutInflater.from(context)
@@ -33,9 +33,9 @@ class InventoryAdapter internal constructor(context: Context?, private val onIte
         return productList.size
     }
 
-    fun updateList(products: MutableList<Product>) {
+    fun updateList(products: List<Product>) {
         productList.clear()
-        productList = products
+        productList.addAll(products)
         notifyDataSetChanged()
     }
 

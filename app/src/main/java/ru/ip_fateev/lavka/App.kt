@@ -8,7 +8,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.MutableLiveData
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
-import ru.ip_fateev.lavka.Inventory.LocalData
 import ru.ip_fateev.lavka.data.LocalDatabase
 import ru.ip_fateev.lavka.data.Place
 import ru.ip_fateev.lavka.data.User
@@ -38,7 +37,6 @@ class App : Application() {
     }
 
     lateinit var deviceUuidFactory: DeviceUuidFactory
-    private var inventory: LocalData? = null
     lateinit var database: LocalDatabase
     lateinit var localRepository: LocalRepository
     var place = MutableLiveData<Place?>(null)
@@ -59,9 +57,9 @@ class App : Application() {
         }
 
         instance = this
-        inventory = LocalData(applicationContext, "data_test1")
         database = LocalDatabase.instance(this)
         localRepository = LocalRepository(
+            database.productDao(),
             database.receiptDao(),
             database.positionDao(),
             database.transactionDao(),
@@ -87,10 +85,6 @@ class App : Application() {
 
         DataSyncService.startService(this)
         UposService.startService(this, "UPOS Service running...")
-    }
-
-    fun getInventory(): LocalData? {
-        return inventory
     }
 
     fun getRepository(): LocalRepository {

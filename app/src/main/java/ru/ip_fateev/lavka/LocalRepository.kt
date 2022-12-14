@@ -5,12 +5,18 @@ import androidx.lifecycle.asLiveData
 import ru.ip_fateev.lavka.data.*
 
 class LocalRepository(
+    private val productDao: ProductDao,
     private val receiptDao: ReceiptDao,
     private val positionDao: PositionDao,
     private val transactionDao: TransactionDao,
     private val placeDao: PlaceDao,
     private val userDao: UserDao
 ) {
+    fun getProductsLive(): LiveData<List<Product>> { return productDao.getFlow().asLiveData() }
+    suspend fun getProducts(): List<Product> { return productDao.get() }
+    suspend fun insertProduct(product: Product) { return productDao.insert(product) }
+    suspend fun updateProduct(product: Product) { return productDao.update(product) }
+
     fun getActiveSellReceipt(): LiveData<Receipt> { return receiptDao.getActiveOneFlow(ReceiptType.SELL).asLiveData() }
     fun getReceiptLive(id: Long): LiveData<Receipt> { return receiptDao.getFlow(id).asLiveData() }
     fun getOneReceiptLive(type: ReceiptType, state: ReceiptState): LiveData<Receipt> { return receiptDao.getOneFlow(type, state).asLiveData()}
