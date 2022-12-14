@@ -137,6 +137,8 @@ class DataSyncService : LifecycleService() {
 
             var str = ""
 
+            Log.d(TAG, "State: $it")
+
             when(it) {
                 ServiceState.SYNC_PRODUCTS -> {
                     str += "Обновление списка продуктов"
@@ -303,9 +305,7 @@ class DataSyncService : LifecycleService() {
 
                     productListForAdd.postValue(forAdd)
 
-                    Log.d(TAG, "For add: ${forAdd.size}")
-                    Log.d(TAG, "For remove: ${forRemove.size}")
-                    Log.d(TAG, "For compare: ${forCompare.size}")
+                    Log.d(TAG, "For add: ${forAdd.size} for remove: ${forRemove.size} for compare: ${forCompare.size}")
                 }
             }
         } catch (throwable: Throwable) {
@@ -422,12 +422,12 @@ class DataSyncService : LifecycleService() {
 
         try {
             val userListResponse = cloudApi.getUserList().execute()
-            Log.d(TAG, "userListResponse:\n ${userListResponse.body()}")
+            //Log.d(TAG, "userListResponse:\n ${userListResponse.body()}")
             if (userListResponse.isSuccessful() && userListResponse.body() != null) {
                 val userList = userListResponse.body() as UserList
                 if (userList.result && userList.user_list != null) {
                     val localList = localRepository.getUsers()
-                    Log.d(TAG, "Users local: ${localList}")
+                    //Log.d(TAG, "Users local: ${localList}")
 
                     for (u in userList.user_list!!) {
                         if (u.id != null && u.name != null) {
@@ -473,6 +473,11 @@ class DataSyncService : LifecycleService() {
             return false
         }
 
+        // этот чек уже не нужно отправлять (статус чека не находится в состояние оплачен или отложен)
+        if (!setOf(ReceiptState.PAID, ReceiptState.DELAYED).contains(r.state)) {
+            return true
+        }
+
         val posList = localRepository.getPositions(id)
         var positions: MutableList<Position> = mutableListOf()
 
@@ -507,6 +512,8 @@ class DataSyncService : LifecycleService() {
             uuid = r.uuid,
             type = receiptType,
             deviceUid = App.getDevId(),
+            place = r.place,
+            user = r.user,
             timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(t.time),
             positions = positions,
             transactions = transactions
@@ -515,12 +522,19 @@ class DataSyncService : LifecycleService() {
         try {
             val receiptResponse = cloudApi.postReceipt(receipt).execute()
             if (receiptResponse.isSuccessful() && receiptResponse.body() != null) {
-                val receipt = receiptResponse.body() as Receipt
-                if (receipt.result != null) {
-                    if (receipt.result){
-                        Log.d(TAG, "Receipt " + receipt.uuid + " pushed")
-                        return true
+                val postedReceipt = receiptResponse.body() as Receipt
+                if (postedReceipt.result != null) {
+                    if (postedReceipt.result) {
+
                     }
+                }
+                Log.d(TAG, "Receipt ${receipt.uuid} pushed with result ${postedReceipt.result}")
+                return true
+            }
+            else {
+                if (receiptResponse.errorBody() != null) {
+                    val str = receiptResponse.errorBody()!!.string()
+                    Log.d(TAG, "Receipt ${receipt.uuid} pushed with error $str")
                 }
             }
         } catch (throwable: Throwable) {

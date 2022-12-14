@@ -47,6 +47,8 @@ data class Receipt (
     var uuid: UUID? = null,
     var type: ReceiptType? = null,
     var deviceUid: UUID? = null,
+    var place: Long? = null,
+    var user: Long? = null,
     var timestamp: String? = null,
     var positions: List<Position>? = null,
     var transactions: List<Transaction>? = null,
