@@ -4,10 +4,14 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import ru.ip_fateev.lavka.data.Product
 
@@ -15,7 +19,7 @@ class InventoryActivity : AppCompatActivity() {
     private lateinit var findInput: EditText
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: InventoryAdapter
-    private var productsAll: MutableLiveData<List<Product>> = MutableLiveData(arrayListOf())
+    private val searchString = MutableStateFlow("")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,30 +36,40 @@ class InventoryActivity : AppCompatActivity() {
             }
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                productsAll.value?.let { updateList(it) }
+                searchString.value = s.toString()
             }
         })
 
         adapter = InventoryAdapter(this){ position -> onListItemClick(position) }
         recyclerView.adapter = adapter
 
-        productsAll.observe(this) {
-            updateList(it)
+        lifecycleScope.launch {
+            var tmp: String? = null
+            var s: String? = null
+            while (true) {
+                val newS = searchString.value
+                if (tmp != newS) {
+                    tmp = newS
+                    delay(500)
+                    continue
+                }
+                if (s != tmp)
+                {
+                    s = tmp
+                    Log.d("InventoryActivity", "Search $s")
+                    val products = App.getInstance().localRepository.getProducts()
+                    val list = filter(products, s)
+                    adapter.updateList(list)
+                }
+                else
+                {
+                    delay(100)
+                }
+            }
         }
-
-        App.getInstance().localRepository.getProductsLive().observe(this) {
-            productsAll.postValue(it)
-        }
-
-
     }
 
-    private fun updateList(products: List<Product>) {
-        adapter.updateList(applyFilter(products))
-    }
-
-    private fun applyFilter(products: List<Product>): MutableList<Product> {
-        val s = findInput.text
+    private fun filter(products: List<Product>, s: String): List<Product> {
         if (s.isEmpty())
         {
             return products.toMutableList()
@@ -64,7 +78,7 @@ class InventoryActivity : AppCompatActivity() {
         val result = mutableListOf<Product>()
 
         //https://github.com/xdrop/fuzzywuzzy
-        val filtered = FuzzySearch.extractSorted(s.toString(), products.toList(), { x: Product -> x.name }, 75)
+        val filtered = FuzzySearch.extractSorted(s, products.toList(), { x: Product -> x.name }, 75)
 
         for (r in filtered) {
             result.add(products[r.index])
